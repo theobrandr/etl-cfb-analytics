@@ -13,7 +13,7 @@ The ETL will extract 5 years of college football data from collegefootball.com, 
 <br>If you don't already have the additional packages installed you will need to install them with pip
 - pip install pandas
 - pip install requests
-- pip install dotenv
+- pip install python-dotenv
 
 **.ENV file**
 <br>An example .env file is found in this repository.
