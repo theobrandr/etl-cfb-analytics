@@ -6,14 +6,15 @@ The ETL will extract 5 years of college football data from collegefootball.com, 
 **Requirements**
 <br>In order to use this python ETL you will need:
 - A valid API key from collegefootballdata.com 
-- Mutiple Python packages (pandas, requests, and dotenv)
+- Mutiple Python packages (pandas, requests, openpyxl and python-dotenv)
 - A ".env" file in the same directory as the script
 
 **Getting Started**
 <br>If you don't already have the additional packages installed you will need to install them with pip
 - pip install pandas
 - pip install requests
-- pip install dotenv
+- pip install python-dotenv
+- pip install openpyxl
 
 **.ENV file**
 <br>An example .env file is found in this repository.
@@ -28,7 +29,7 @@ If you don't want to pull 4 years of previous data, set env_previous_years_api_p
 - In order to avoid re-pulling all previous years cfb data with every run of the script, a folder titled 'api_files' will be created in the directory the script is run from. All of the collegefootball.com api pulls are stored in this folder. The ETL will update the current year files with each run. 
 
 **ETL Usage**
-- python etl-cfb-analytics.py
+- python etl_cfb_analytics.py
 
 **Data and Analystics Pulled**
 - Game Matchups by Season and Week
