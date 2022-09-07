@@ -26,7 +26,7 @@ If you would like to re-pull that data, change this back to env_previous_years_a
 If you don't want to pull 4 years of previous data, set env_previous_years_api_pull_status='True'
 
 **File Storage**
-- In order to avoid re-pulling all previous years cfb data with every run of the script, a folder titled 'api_files' will be created in the directory the script is run from. All of the collegefootball.com api pulls are stored in this folder. The ETL will update the current year files with each run. 
+- In order to avoid re-pulling all previous years cfb data with every run of the script, a folder titled 'api_files' will be created in the directory the script is run from. All of the collegefootball.com api pulls are stored in this folder as json files. The ETL will update the current year files with each run. 
 
 **ETL Usage**
 - python etl_cfb_analytics.py
