@@ -80,7 +80,7 @@ def function_cfb_pregame_api_check():
 
 def function_cfb_pregame_api_pull_previous_years_check():
     if previous_years_api_pull_status == 'True':
-        print('Skipping pull College Football Data from ' + str(previous_years_range))
+        print('Skipping pull of College Football Data from ' + str(previous_years_range))
         return()
     elif previous_years_api_pull_status == 'False':
         function_cfb_extract_previous_years_api_pulls()
@@ -631,7 +631,7 @@ def function_cfb_transform_summary_data():
 
 def function_cfb_load_transformed_data():
     global cfb_all_data
-    print('Loading Datasets to CSV')
+    print('Loading Datasets to xlsx')
     #Transform df's with stats and merge on games
     df_cfb_games_and_stats = pd.merge(df_cfb_season_games_all_updated, df_cfb_season_stats_all,
                                       left_on=['team','season'], right_on=['team','season'], how='left')
@@ -701,8 +701,8 @@ def function_cfb_load_transformed_data():
 function_cfb_pregame_filepath_check()
 function_cfb_pregame_api_check()
 function_cfb_pregame_api_pull_previous_years_check()
-#function_cfb_extract_current_year_api_pull()
-#function_cfb_extract_team_info_api_pull()
+function_cfb_extract_current_year_api_pull()
+function_cfb_extract_team_info_api_pull()
 function_cfb_extract_json_to_df()
 function_cfb_transform_season_stats()
 function_cfb_transform_games_and_stats()
