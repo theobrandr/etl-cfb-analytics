@@ -28,7 +28,7 @@ If you don't want to pull 4 years of previous data, set env_previous_years_api_p
 - In order to avoid re-pulling all previous years cfb data with every run of the script, a folder titled 'api_files' will be created in the directory the script is run from. All of the collegefootball.com api pulls are stored in this folder. The ETL will update the current year files with each run. 
 
 **ETL Usage**
-- python etl-cfb-analytics.py
+- python etl_cfb_analytics.py
 
 **Data and Analystics Pulled**
 - Game Matchups by Season and Week
