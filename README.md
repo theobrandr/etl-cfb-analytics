@@ -6,7 +6,7 @@ The ETL will extract 5 years of college football data from collegefootball.com, 
 **Requirements**
 <br>In order to use this python ETL you will need:
 - A valid API key from collegefootballdata.com 
-- Mutiple Python packages (pandas, requests, and dotenv)
+- Mutiple Python packages (pandas, requests, openpyxl and python-dotenv)
 - A ".env" file in the same directory as the script
 
 **Getting Started**
@@ -14,6 +14,7 @@ The ETL will extract 5 years of college football data from collegefootball.com, 
 - pip install pandas
 - pip install requests
 - pip install python-dotenv
+- pip install openpyxl
 
 **.ENV file**
 <br>An example .env file is found in this repository.
