@@ -651,26 +651,22 @@ def function_cfb_load_transformed_data():
     #Transform Join EPA per Game on Rankings/Games/Stats/Agg Scores with Records
     df_cfb_epa_per_game_all_select_col = df_cfb_epa_per_game.drop(
         columns=['season', 'week', 'conference', 'opponent'])
-    df_cfb_games_stats_agg_scores_rankings_team_records_epa = pd.merge(df_cfb_games_stats_agg_scores_rankings_team_records, df_cfb_epa_per_game,
+    df_cfb_games_stats_agg_scores_rankings_team_records_epa = pd.merge(df_cfb_games_stats_agg_scores_rankings_team_records, df_cfb_epa_per_game_all_select_col,
         left_on=['id', 'team'], right_on=['id', 'team'], how='left')
 
     #Transform Join Rankings/Games/Stats/Agg Scores/EPA with Odds
     df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds = pd.merge(df_cfb_games_stats_agg_scores_rankings_team_records_epa, df_cfb_odds_per_game_with_calc,
         left_on=['id', 'team'], right_on=['id', 'team'], how='left')
 
-    #Transform Join some of the above dataframes together for smaller datasets
-    df_cfb_season_games_all_updated_groupby = df_cfb_season_games_all_updated.groupby(['team', 'season'])
-
     #Transform Join Coach Poll / Rankings with Games/Stats/Agg Scores df
     df_cfb_season_games_all_updated_join_rankings = pd.merge(df_cfb_season_games_all_updated, df_cfb_ranking_all_updated,
                                                       left_on=['team', 'week', 'season'],
                                                       right_on=['team', 'week', 'season'], how='left')
+
     #General Game data joined with odds
     df_cfb_season_games_all_updated_join_odds = pd.merge(df_cfb_season_games_all_updated, df_cfb_odds_per_game_with_calc,
                                                         left_on=['id', 'team'], right_on=['id', 'team'], how='left')
 
-    df_cfb_season_games_all_updated_join_epa = pd.merge(df_cfb_season_games_all_updated, df_cfb_epa_per_game,
-                                                         left_on=['id', 'team'], right_on=['id', 'team'], how='left')
     #CFB Season Games Score Calculation
     cfb_season_games_agg_scores = df_cfb_season_games_agg_scores
 
