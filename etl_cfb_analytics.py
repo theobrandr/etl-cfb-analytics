@@ -340,75 +340,75 @@ def function_cfb_transform_season_stats():
     df_cfb_season_stats_all.rename(columns=lambda col: f"specialteams_{col}"
                                                     if col in ("kickReturnTDs", "kickReturnYards", "kickReturns", "puntReturnTDs", "puntReturnYards", "puntReturns")
                                                     else col, inplace=True)
-    for df_season_stats_year['season'] in df_cfb_season_stats_all:
-        #Calculate Offense Stats
-        #Possession Time
-        df_cfb_season_stats_all['offense_possessionTime_zscore'] = (df_cfb_season_stats_all['offense_possessionTime'] - df_cfb_season_stats_all['offense_possessionTime'].mean()) / df_cfb_season_stats_all['offense_possessionTime'].std()
-        #First Downs
-        df_cfb_season_stats_all['offense_firstDowns_zscore'] = (df_cfb_season_stats_all['offense_firstDowns'] - df_cfb_season_stats_all['offense_firstDowns'].mean()) / df_cfb_season_stats_all['offense_firstDowns'].std()
-        #Fourth Downs
-        df_cfb_season_stats_all['offense_fourthDownConversions_zscore'] = (df_cfb_season_stats_all['offense_fourthDownConversions'] - df_cfb_season_stats_all['offense_fourthDownConversions'].mean()) / df_cfb_season_stats_all['offense_fourthDownConversions'].std()
-        df_cfb_season_stats_all['offense_fourthDowns_zscore'] = (df_cfb_season_stats_all['offense_fourthDowns'] - df_cfb_season_stats_all['offense_fourthDowns'].mean()) / df_cfb_season_stats_all['offense_fourthDowns'].std()
-        #Calculate Actual Fourth Down Completion Percentage
-        df_cfb_season_stats_all['offense_fourthDownConversions_percent'] = (df_cfb_season_stats_all['offense_fourthDownConversions'] - df_cfb_season_stats_all['offense_fourthDowns'])
-        df_cfb_season_stats_all['offense_fourthDownConversions_percent_zscore'] = (df_cfb_season_stats_all['offense_fourthDownConversions_percent'] - df_cfb_season_stats_all['offense_fourthDownConversions_percent'].mean()) / df_cfb_season_stats_all['offense_fourthDownConversions_percent'].std()
-        #Pass Attempts and Completions
-        df_cfb_season_stats_all['offense_passAttempts_zscore'] = (df_cfb_season_stats_all['offense_passAttempts'] - df_cfb_season_stats_all['offense_passAttempts'].mean()) / df_cfb_season_stats_all['offense_passAttempts'].std()
-        df_cfb_season_stats_all['offense_passCompletions_zscore'] = (df_cfb_season_stats_all['offense_passCompletions'] - df_cfb_season_stats_all['offense_passCompletions'].mean()) / df_cfb_season_stats_all['offense_passCompletions'].std()
-        #Calculate Actual Pass Completion Percentage
-        df_cfb_season_stats_all['offense_passCompletion_Conversions_percent'] = (df_cfb_season_stats_all['offense_passCompletions'] - df_cfb_season_stats_all['offense_passAttempts'])
-        df_cfb_season_stats_all['offense_passCompletion_Conversions_percent_zscore'] = (df_cfb_season_stats_all['offense_passCompletion_Conversions_percent'] - df_cfb_season_stats_all['offense_passCompletion_Conversions_percent'].mean()) / df_cfb_season_stats_all['offense_passCompletion_Conversions_percent'].std()
-        #Rushing Attempts and Total Yards
-        df_cfb_season_stats_all['offense_rushingAttempts_zscore'] = (df_cfb_season_stats_all['offense_rushingAttempts'] - df_cfb_season_stats_all['offense_rushingAttempts'].mean()) / df_cfb_season_stats_all['offense_rushingAttempts'].std()
-        df_cfb_season_stats_all['offense_rushingYards_zscore'] = (df_cfb_season_stats_all['offense_rushingYards'] - df_cfb_season_stats_all['offense_rushingYards'].mean()) / df_cfb_season_stats_all['offense_rushingYards'].std()
-        #Calculate Average Rushing Yards
-        df_cfb_season_stats_all['offense_rushingYards_perAttempt_percent'] = (df_cfb_season_stats_all['offense_rushingYards'] - df_cfb_season_stats_all['offense_rushingAttempts'])
-        df_cfb_season_stats_all['offense_rushingYards_perAttempt_percent_zscore'] = (df_cfb_season_stats_all['offense_rushingYards_perAttempt_percent'] - df_cfb_season_stats_all['offense_rushingYards_perAttempt_percent'].mean()) / df_cfb_season_stats_all['offense_rushingYards_perAttempt_percent'].std()
-        #Third Downs and Third Down conversions
-        df_cfb_season_stats_all['offense_thirdDownConversions_zscore'] = (df_cfb_season_stats_all['offense_thirdDownConversions'] - df_cfb_season_stats_all['offense_thirdDownConversions'].mean()) / df_cfb_season_stats_all['offense_thirdDownConversions'].std()
-        df_cfb_season_stats_all['offense_thirdDowns_zscore'] = (df_cfb_season_stats_all['offense_thirdDowns'] - df_cfb_season_stats_all['offense_thirdDowns'].mean()) / df_cfb_season_stats_all['offense_thirdDowns'].std()
-        #Calculate Actual Third Down Completion Percentage
-        df_cfb_season_stats_all['offense_thirdDownConversions_percent'] = (df_cfb_season_stats_all['offense_thirdDownConversions'] - df_cfb_season_stats_all['offense_thirdDowns'])
-        df_cfb_season_stats_all['offense_thirdDownConversions_percent_zscore'] = (df_cfb_season_stats_all['offense_thirdDownConversions_percent'] - df_cfb_season_stats_all['offense_thirdDownConversions_percent'].mean()) / df_cfb_season_stats_all['offense_thirdDownConversions_percent'].std()
-        #Totals and other stats
-        df_cfb_season_stats_all['offense_rushingTDs_zscore'] = (df_cfb_season_stats_all['offense_rushingTDs'] - df_cfb_season_stats_all['offense_rushingTDs'].mean()) / df_cfb_season_stats_all['offense_rushingTDs'].std()
-        df_cfb_season_stats_all['offense_totalYards_zscore'] = (df_cfb_season_stats_all['offense_totalYards'] - df_cfb_season_stats_all['offense_totalYards'].mean()) / df_cfb_season_stats_all['offense_totalYards'].std()
-        df_cfb_season_stats_all['offense_netPassingYards_zscore'] = (df_cfb_season_stats_all['offense_netPassingYards'] - df_cfb_season_stats_all['offense_netPassingYards'].mean()) / df_cfb_season_stats_all['offense_netPassingYards'].std()
-        df_cfb_season_stats_all['offense_passingTDs_zscore'] = (df_cfb_season_stats_all['offense_passingTDs'] - df_cfb_season_stats_all['offense_passingTDs'].mean()) / df_cfb_season_stats_all['offense_passingTDs'].std()
-        #Calculate zscore for offensive stats that need to be subtracted (minus)
-        df_cfb_season_stats_all['offense_passesIntercepted_zscore_minus'] = (df_cfb_season_stats_all['offense_passesIntercepted'] - df_cfb_season_stats_all['offense_passesIntercepted'].mean()) / df_cfb_season_stats_all['offense_passesIntercepted'].std()
-        df_cfb_season_stats_all['offense_fumblesLost_zscore_minus'] = (df_cfb_season_stats_all['offense_fumblesLost'] - df_cfb_season_stats_all['offense_fumblesLost'].mean()) / df_cfb_season_stats_all['offense_fumblesLost'].std()
-        df_cfb_season_stats_all['offense_turnovers_zscore_minus'] = (df_cfb_season_stats_all['offense_turnovers'] - df_cfb_season_stats_all['offense_turnovers'].mean()) / df_cfb_season_stats_all['offense_turnovers'].std()
-        #Calculate zscore for Defense Stats
-        df_cfb_season_stats_all['defense_fumblesRecovered_zscore'] = (df_cfb_season_stats_all['defense_fumblesRecovered'] - df_cfb_season_stats_all['defense_fumblesRecovered'].mean()) / df_cfb_season_stats_all['defense_fumblesRecovered'].std()
-        df_cfb_season_stats_all['defense_interceptionTDs_zscore'] = (df_cfb_season_stats_all['defense_interceptionTDs'] - df_cfb_season_stats_all['defense_interceptionTDs'].mean()) / df_cfb_season_stats_all['defense_interceptionTDs'].std()
-        df_cfb_season_stats_all['defense_interceptionYards_zscore'] = (df_cfb_season_stats_all['defense_interceptionYards'] - df_cfb_season_stats_all['defense_interceptionYards'].mean()) / df_cfb_season_stats_all['defense_interceptionYards'].std()
-        df_cfb_season_stats_all['defense_interceptions_zscore'] = (df_cfb_season_stats_all['defense_interceptions'] - df_cfb_season_stats_all['defense_interceptions'].mean()) / df_cfb_season_stats_all['defense_interceptions'].std()
-        df_cfb_season_stats_all['defense_tacklesForLoss_zscore'] = (df_cfb_season_stats_all['defense_tacklesForLoss'] - df_cfb_season_stats_all['defense_tacklesForLoss'].mean()) / df_cfb_season_stats_all['defense_tacklesForLoss'].std()
-        df_cfb_season_stats_all['sacks_zscore'] = (df_cfb_season_stats_all['defense_sacks'] - df_cfb_season_stats_all['defense_sacks'].mean()) / df_cfb_season_stats_all['defense_sacks'].std()
-        #Calculate zscore for special teams stats
-        df_cfb_season_stats_all['specialteams_kickReturnTDs_zscore'] = (df_cfb_season_stats_all['specialteams_kickReturnTDs'] - df_cfb_season_stats_all['specialteams_kickReturnTDs'].mean()) / df_cfb_season_stats_all['specialteams_kickReturnTDs'].std()
-        df_cfb_season_stats_all['specialteams_kickReturnYards_zscore'] = (df_cfb_season_stats_all['specialteams_kickReturnYards'] - df_cfb_season_stats_all['specialteams_kickReturnYards'].mean()) / df_cfb_season_stats_all['specialteams_kickReturnYards'].std()
-        df_cfb_season_stats_all['specialteams_kickReturns_zscore'] = (df_cfb_season_stats_all['specialteams_kickReturns'] - df_cfb_season_stats_all['specialteams_kickReturns'].mean()) / df_cfb_season_stats_all['specialteams_kickReturns'].std()
-        df_cfb_season_stats_all['specialteams_puntReturnTDs_zscore'] = (df_cfb_season_stats_all['specialteams_puntReturnTDs'] - df_cfb_season_stats_all['specialteams_puntReturnTDs'].mean()) / df_cfb_season_stats_all['specialteams_puntReturnTDs'].std()
-        df_cfb_season_stats_all['specialteams_puntReturnYards_zscore'] = (df_cfb_season_stats_all['specialteams_puntReturnYards'] - df_cfb_season_stats_all['specialteams_puntReturnYards'].mean()) / df_cfb_season_stats_all['specialteams_puntReturnYards'].std()
-        df_cfb_season_stats_all['specialteams_puntReturns_zscore'] = (df_cfb_season_stats_all['specialteams_puntReturns'] - df_cfb_season_stats_all['specialteams_puntReturns'].mean()) / df_cfb_season_stats_all['specialteams_puntReturns'].std()
-        #Fill NA with 0 and Sum zscore columns
-        df_cfb_season_stats_all.fillna(0,inplace=True)
-        df_cfb_season_stats_all['offense_plus_zscore_sum'] = df_cfb_season_stats_all.filter(regex='offense_[a-zA-Z]+_zscore').sum(axis=1)
-        df_cfb_season_stats_all['offense_minus_zscore_sum'] = df_cfb_season_stats_all.filter(regex='offense_[a-zA-Z]+_zscore_minus').sum(axis=1)
-        df_cfb_season_stats_all['offense_zscore_final'] = df_cfb_season_stats_all['offense_plus_zscore_sum'] - df_cfb_season_stats_all['offense_minus_zscore_sum']
-        df_cfb_season_stats_all['defense_zscore_final'] = df_cfb_season_stats_all.filter(regex='defense_[a-zA-Z]+_zscore').sum(axis=1)
-        df_cfb_season_stats_all['specialteams_zscore_final'] = df_cfb_season_stats_all.filter(regex='specialteams_[a-zA-Z]+_zscore').sum(axis=1)
-        df_cfb_season_stats_all['total_zscore'] = df_cfb_season_stats_all['offense_zscore_final'] + df_cfb_season_stats_all['defense_zscore_final'] + df_cfb_season_stats_all['specialteams_zscore_final']
-        '''
-        df_cfb_season_stats_all_sel_col = df_cfb_season_stats_all[[
-            'team', 'season', 'games', 'offense_plus_zscore_sum', 'offense_minus_zscore_sum', 'offense_zscore_final',
-            'defense_zscore_final', 'specialteams_zscore_final', 'total_zscore']]
-        df_cfb_season_stats_all_sel_col_sorted = df_cfb_season_stats_all_sel_col.sort_values(by=['team','season'], ascending=True, na_position='first')
-        df_cfb_season_stats_all_sel_col_sorted["games_year"] = df_cfb_season_stats_all_sel_col_sorted[['season', 'games']].astype(str).apply(" : ".join,axis=1)
-        df_cfb_season_stats_all_sel_col_sorted_groupby = df_cfb_season_stats_all_sel_col_sorted.groupby(['team'])['games_year'].agg(", ".join).reset_index()
-        '''
+
+    #Calculate Offense Stats
+    #Possession Time
+    df_cfb_season_stats_all['offense_possessionTime_zscore'] = (df_cfb_season_stats_all['offense_possessionTime'] - df_cfb_season_stats_all['offense_possessionTime'].mean()) / df_cfb_season_stats_all['offense_possessionTime'].std()
+    #First Downs
+    df_cfb_season_stats_all['offense_firstDowns_zscore'] = (df_cfb_season_stats_all['offense_firstDowns'] - df_cfb_season_stats_all['offense_firstDowns'].mean()) / df_cfb_season_stats_all['offense_firstDowns'].std()
+    #Fourth Downs
+    df_cfb_season_stats_all['offense_fourthDownConversions_zscore'] = (df_cfb_season_stats_all['offense_fourthDownConversions'] - df_cfb_season_stats_all['offense_fourthDownConversions'].mean()) / df_cfb_season_stats_all['offense_fourthDownConversions'].std()
+    df_cfb_season_stats_all['offense_fourthDowns_zscore'] = (df_cfb_season_stats_all['offense_fourthDowns'] - df_cfb_season_stats_all['offense_fourthDowns'].mean()) / df_cfb_season_stats_all['offense_fourthDowns'].std()
+    #Calculate Actual Fourth Down Completion Percentage
+    df_cfb_season_stats_all['offense_fourthDownConversions_percent'] = (df_cfb_season_stats_all['offense_fourthDownConversions'] - df_cfb_season_stats_all['offense_fourthDowns'])
+    df_cfb_season_stats_all['offense_fourthDownConversions_percent_zscore'] = (df_cfb_season_stats_all['offense_fourthDownConversions_percent'] - df_cfb_season_stats_all['offense_fourthDownConversions_percent'].mean()) / df_cfb_season_stats_all['offense_fourthDownConversions_percent'].std()
+    #Pass Attempts and Completions
+    df_cfb_season_stats_all['offense_passAttempts_zscore'] = (df_cfb_season_stats_all['offense_passAttempts'] - df_cfb_season_stats_all['offense_passAttempts'].mean()) / df_cfb_season_stats_all['offense_passAttempts'].std()
+    df_cfb_season_stats_all['offense_passCompletions_zscore'] = (df_cfb_season_stats_all['offense_passCompletions'] - df_cfb_season_stats_all['offense_passCompletions'].mean()) / df_cfb_season_stats_all['offense_passCompletions'].std()
+    #Calculate Actual Pass Completion Percentage
+    df_cfb_season_stats_all['offense_passCompletion_Conversions_percent'] = (df_cfb_season_stats_all['offense_passCompletions'] - df_cfb_season_stats_all['offense_passAttempts'])
+    df_cfb_season_stats_all['offense_passCompletion_Conversions_percent_zscore'] = (df_cfb_season_stats_all['offense_passCompletion_Conversions_percent'] - df_cfb_season_stats_all['offense_passCompletion_Conversions_percent'].mean()) / df_cfb_season_stats_all['offense_passCompletion_Conversions_percent'].std()
+    #Rushing Attempts and Total Yards
+    df_cfb_season_stats_all['offense_rushingAttempts_zscore'] = (df_cfb_season_stats_all['offense_rushingAttempts'] - df_cfb_season_stats_all['offense_rushingAttempts'].mean()) / df_cfb_season_stats_all['offense_rushingAttempts'].std()
+    df_cfb_season_stats_all['offense_rushingYards_zscore'] = (df_cfb_season_stats_all['offense_rushingYards'] - df_cfb_season_stats_all['offense_rushingYards'].mean()) / df_cfb_season_stats_all['offense_rushingYards'].std()
+    #Calculate Average Rushing Yards
+    df_cfb_season_stats_all['offense_rushingYards_perAttempt_percent'] = (df_cfb_season_stats_all['offense_rushingYards'] - df_cfb_season_stats_all['offense_rushingAttempts'])
+    df_cfb_season_stats_all['offense_rushingYards_perAttempt_percent_zscore'] = (df_cfb_season_stats_all['offense_rushingYards_perAttempt_percent'] - df_cfb_season_stats_all['offense_rushingYards_perAttempt_percent'].mean()) / df_cfb_season_stats_all['offense_rushingYards_perAttempt_percent'].std()
+    #Third Downs and Third Down conversions
+    df_cfb_season_stats_all['offense_thirdDownConversions_zscore'] = (df_cfb_season_stats_all['offense_thirdDownConversions'] - df_cfb_season_stats_all['offense_thirdDownConversions'].mean()) / df_cfb_season_stats_all['offense_thirdDownConversions'].std()
+    df_cfb_season_stats_all['offense_thirdDowns_zscore'] = (df_cfb_season_stats_all['offense_thirdDowns'] - df_cfb_season_stats_all['offense_thirdDowns'].mean()) / df_cfb_season_stats_all['offense_thirdDowns'].std()
+    #Calculate Actual Third Down Completion Percentage
+    df_cfb_season_stats_all['offense_thirdDownConversions_percent'] = (df_cfb_season_stats_all['offense_thirdDownConversions'] - df_cfb_season_stats_all['offense_thirdDowns'])
+    df_cfb_season_stats_all['offense_thirdDownConversions_percent_zscore'] = (df_cfb_season_stats_all['offense_thirdDownConversions_percent'] - df_cfb_season_stats_all['offense_thirdDownConversions_percent'].mean()) / df_cfb_season_stats_all['offense_thirdDownConversions_percent'].std()
+    #Totals and other stats
+    df_cfb_season_stats_all['offense_rushingTDs_zscore'] = (df_cfb_season_stats_all['offense_rushingTDs'] - df_cfb_season_stats_all['offense_rushingTDs'].mean()) / df_cfb_season_stats_all['offense_rushingTDs'].std()
+    df_cfb_season_stats_all['offense_totalYards_zscore'] = (df_cfb_season_stats_all['offense_totalYards'] - df_cfb_season_stats_all['offense_totalYards'].mean()) / df_cfb_season_stats_all['offense_totalYards'].std()
+    df_cfb_season_stats_all['offense_netPassingYards_zscore'] = (df_cfb_season_stats_all['offense_netPassingYards'] - df_cfb_season_stats_all['offense_netPassingYards'].mean()) / df_cfb_season_stats_all['offense_netPassingYards'].std()
+    df_cfb_season_stats_all['offense_passingTDs_zscore'] = (df_cfb_season_stats_all['offense_passingTDs'] - df_cfb_season_stats_all['offense_passingTDs'].mean()) / df_cfb_season_stats_all['offense_passingTDs'].std()
+    #Calculate zscore for offensive stats that need to be subtracted (minus)
+    df_cfb_season_stats_all['offense_passesIntercepted_zscore_minus'] = (df_cfb_season_stats_all['offense_passesIntercepted'] - df_cfb_season_stats_all['offense_passesIntercepted'].mean()) / df_cfb_season_stats_all['offense_passesIntercepted'].std()
+    df_cfb_season_stats_all['offense_fumblesLost_zscore_minus'] = (df_cfb_season_stats_all['offense_fumblesLost'] - df_cfb_season_stats_all['offense_fumblesLost'].mean()) / df_cfb_season_stats_all['offense_fumblesLost'].std()
+    df_cfb_season_stats_all['offense_turnovers_zscore_minus'] = (df_cfb_season_stats_all['offense_turnovers'] - df_cfb_season_stats_all['offense_turnovers'].mean()) / df_cfb_season_stats_all['offense_turnovers'].std()
+    #Calculate zscore for Defense Stats
+    df_cfb_season_stats_all['defense_fumblesRecovered_zscore'] = (df_cfb_season_stats_all['defense_fumblesRecovered'] - df_cfb_season_stats_all['defense_fumblesRecovered'].mean()) / df_cfb_season_stats_all['defense_fumblesRecovered'].std()
+    df_cfb_season_stats_all['defense_interceptionTDs_zscore'] = (df_cfb_season_stats_all['defense_interceptionTDs'] - df_cfb_season_stats_all['defense_interceptionTDs'].mean()) / df_cfb_season_stats_all['defense_interceptionTDs'].std()
+    df_cfb_season_stats_all['defense_interceptionYards_zscore'] = (df_cfb_season_stats_all['defense_interceptionYards'] - df_cfb_season_stats_all['defense_interceptionYards'].mean()) / df_cfb_season_stats_all['defense_interceptionYards'].std()
+    df_cfb_season_stats_all['defense_interceptions_zscore'] = (df_cfb_season_stats_all['defense_interceptions'] - df_cfb_season_stats_all['defense_interceptions'].mean()) / df_cfb_season_stats_all['defense_interceptions'].std()
+    df_cfb_season_stats_all['defense_tacklesForLoss_zscore'] = (df_cfb_season_stats_all['defense_tacklesForLoss'] - df_cfb_season_stats_all['defense_tacklesForLoss'].mean()) / df_cfb_season_stats_all['defense_tacklesForLoss'].std()
+    df_cfb_season_stats_all['sacks_zscore'] = (df_cfb_season_stats_all['defense_sacks'] - df_cfb_season_stats_all['defense_sacks'].mean()) / df_cfb_season_stats_all['defense_sacks'].std()
+    #Calculate zscore for special teams stats
+    df_cfb_season_stats_all['specialteams_kickReturnTDs_zscore'] = (df_cfb_season_stats_all['specialteams_kickReturnTDs'] - df_cfb_season_stats_all['specialteams_kickReturnTDs'].mean()) / df_cfb_season_stats_all['specialteams_kickReturnTDs'].std()
+    df_cfb_season_stats_all['specialteams_kickReturnYards_zscore'] = (df_cfb_season_stats_all['specialteams_kickReturnYards'] - df_cfb_season_stats_all['specialteams_kickReturnYards'].mean()) / df_cfb_season_stats_all['specialteams_kickReturnYards'].std()
+    df_cfb_season_stats_all['specialteams_kickReturns_zscore'] = (df_cfb_season_stats_all['specialteams_kickReturns'] - df_cfb_season_stats_all['specialteams_kickReturns'].mean()) / df_cfb_season_stats_all['specialteams_kickReturns'].std()
+    df_cfb_season_stats_all['specialteams_puntReturnTDs_zscore'] = (df_cfb_season_stats_all['specialteams_puntReturnTDs'] - df_cfb_season_stats_all['specialteams_puntReturnTDs'].mean()) / df_cfb_season_stats_all['specialteams_puntReturnTDs'].std()
+    df_cfb_season_stats_all['specialteams_puntReturnYards_zscore'] = (df_cfb_season_stats_all['specialteams_puntReturnYards'] - df_cfb_season_stats_all['specialteams_puntReturnYards'].mean()) / df_cfb_season_stats_all['specialteams_puntReturnYards'].std()
+    df_cfb_season_stats_all['specialteams_puntReturns_zscore'] = (df_cfb_season_stats_all['specialteams_puntReturns'] - df_cfb_season_stats_all['specialteams_puntReturns'].mean()) / df_cfb_season_stats_all['specialteams_puntReturns'].std()
+    #Fill NA with 0 and Sum zscore columns
+    df_cfb_season_stats_all.fillna(0,inplace=True)
+    df_cfb_season_stats_all['offense_plus_zscore_sum'] = df_cfb_season_stats_all.filter(regex='offense_[a-zA-Z]+_zscore').sum(axis=1)
+    df_cfb_season_stats_all['offense_minus_zscore_sum'] = df_cfb_season_stats_all.filter(regex='offense_[a-zA-Z]+_zscore_minus').sum(axis=1)
+    df_cfb_season_stats_all['offense_zscore_final'] = df_cfb_season_stats_all['offense_plus_zscore_sum'] - df_cfb_season_stats_all['offense_minus_zscore_sum']
+    df_cfb_season_stats_all['defense_zscore_final'] = df_cfb_season_stats_all.filter(regex='defense_[a-zA-Z]+_zscore').sum(axis=1)
+    df_cfb_season_stats_all['specialteams_zscore_final'] = df_cfb_season_stats_all.filter(regex='specialteams_[a-zA-Z]+_zscore').sum(axis=1)
+    df_cfb_season_stats_all['total_zscore'] = df_cfb_season_stats_all['offense_zscore_final'] + df_cfb_season_stats_all['defense_zscore_final'] + df_cfb_season_stats_all['specialteams_zscore_final']
+    '''
+    df_cfb_season_stats_all_sel_col = df_cfb_season_stats_all[[
+        'team', 'season', 'games', 'offense_plus_zscore_sum', 'offense_minus_zscore_sum', 'offense_zscore_final',
+        'defense_zscore_final', 'specialteams_zscore_final', 'total_zscore']]
+    df_cfb_season_stats_all_sel_col_sorted = df_cfb_season_stats_all_sel_col.sort_values(by=['team','season'], ascending=True, na_position='first')
+    df_cfb_season_stats_all_sel_col_sorted["games_year"] = df_cfb_season_stats_all_sel_col_sorted[['season', 'games']].astype(str).apply(" : ".join,axis=1)
+    df_cfb_season_stats_all_sel_col_sorted_groupby = df_cfb_season_stats_all_sel_col_sorted.groupby(['team'])['games_year'].agg(", ".join).reset_index()
+    '''
 
 def function_cfb_transform_games_and_stats():
     global df_cfb_season_games_all_updated
@@ -626,8 +626,6 @@ def function_cfb_transform_summary_data():
                                                             left_on=['team', 'season'],
                                                             right_on=['team', 'season'], how='left')
     cfb_summary_join_record_rank_agg_zscores_epa_sorted = cfb_summary_join_record_rank_agg_zscores_epa.sort_values(by=['team', 'season'], ascending=True, na_position='first')
-
-    cfb_summary_join_record_rank_agg_zscores_epa_sorted
 
 def function_cfb_load_transformed_data():
     global cfb_all_data
