@@ -93,7 +93,7 @@ def function_cfb_extract_previous_years_api_pulls():
         #Get Games/Season Info
         try:
             response_games = requests.get(
-                (str(cfb_url + str('games?year=' + str(season_year) + '&seasonType=regular'))),
+                (str(cfb_url + str('games?year=' + str(season_year) + '&seasonType=regular&division=fbs'))),
                 headers=headers_cfb)
         except requests.exceptions.RequestException as error:
             print("Error: ", error)
@@ -153,7 +153,7 @@ def function_cfb_extract_current_year_api_pull():
     #Get Season Info
     try:
         response_games = requests.get(
-            (str(cfb_url + str('games?year=' + str(current_year) + '&seasonType=regular'))),
+            (str(cfb_url + str('games?year=' + str(current_year) + '&seasonType=regular&division=fbs'))),
             headers=headers_cfb)
     except requests.exceptions.RequestException as error:
         print("Error: ", error)
