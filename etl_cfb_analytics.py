@@ -358,7 +358,7 @@ def function_cfb_transform_season_stats():
         df_cfb_season_stats_all_for_loop['offense_passAttempts_zscore'] = (df_cfb_season_stats_all_for_loop['offense_passAttempts'] - df_cfb_season_stats_all_for_loop['offense_passAttempts'].mean()) / df_cfb_season_stats_all_for_loop['offense_passAttempts'].std()
         df_cfb_season_stats_all_for_loop['offense_passCompletions_zscore'] = (df_cfb_season_stats_all_for_loop['offense_passCompletions'] - df_cfb_season_stats_all_for_loop['offense_passCompletions'].mean()) / df_cfb_season_stats_all_for_loop['offense_passCompletions'].std()
         #Calculate Actual Pass Completion Percentage
-        df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'] = (df_cfb_season_stats_all_for_loop['offense_passCompletions'] - df_cfb_season_stats_all_for_loop['offense_passAttempts'])
+        df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'] = (df_cfb_season_stats_all_for_loop['offense_passCompletions'] / df_cfb_season_stats_all_for_loop['offense_passAttempts'])
         df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent_zscore'] = (df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'] - df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'].mean()) / df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'].std()
         #Rushing Attempts and Total Yards
         df_cfb_season_stats_all_for_loop['offense_rushingAttempts_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingAttempts'] - df_cfb_season_stats_all_for_loop['offense_rushingAttempts'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingAttempts'].std()
@@ -440,6 +440,7 @@ def function_cfb_transform_games_and_stats():
     df_cfb_season_games_all_updated = df_cfb_season_games_all_append
     df_cfb_season_games_all_updated.fillna(0, inplace=True)
     df_cfb_season_games_all_updated['points'].astype('int64')
+    df_cfb_season_games_all_updated["date"] = pd.to_datetime(df_cfb_season_games_all_updated["start_date"], format="%Y/%m/%d")
 
 def function_cfb_transform_games_and_agg_scores():
     global df_cfb_season_games_agg_scores
@@ -679,7 +680,7 @@ def function_cfb_load_transformed_data():
     cfb_games_with_spread_analytics = df_cfb_season_games_all_updated_join_odds
 
     #CFB Games with all advanced stats
-    cfb_season_stats_all = df_cfb_season_stats_all
+    cfb_season_stats_by_season = df_cfb_season_stats_all
 
     #CFB Summary Data
     cfb_summary = cfb_summary_join_record_rank_agg_zscores_epa_sorted
@@ -690,7 +691,7 @@ def function_cfb_load_transformed_data():
     with pd.ExcelWriter(str(file_path_cfb) + '/cfb.xlsx') as writer:
         cfb_summary.to_excel(writer, sheet_name='cfb_summary', engine='xlsxwriter')
         cfb_games_with_spread_analytics.to_excel(writer, sheet_name='cfb_games_spread', engine='xlsxwriter')
-        cfb_season_stats_all.to_excel(writer, sheet_name='cfb_season_stats', engine='xlsxwriter')
+        cfb_season_stats_by_season.to_excel(writer, sheet_name='cfb_season_stats_by_season', engine='xlsxwriter')
         cfb_season_games_agg_scores.to_excel(writer, sheet_name='cfb_games_scores', engine='xlsxwriter')
         cfb_team_record_by_year.to_excel(writer, sheet_name='cfb_team_record', engine='xlsxwriter')
         cfb_all_data.to_excel(writer, sheet_name='cfb_all_data', engine='xlsxwriter')
