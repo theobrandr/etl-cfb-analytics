@@ -7,10 +7,19 @@ import requests
 import dotenv
 import openpyxl
 from datetime import date
-
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+import seaborn as sns
 dotenv.load_dotenv()
 
 #Variables
+
+#Year variables for CFB API
+current_year = date.today().year
+previous_year = current_year - 1
+previous_years_range = list(range(previous_year, previous_year - 5, -1))
+years = list(range(current_year, current_year - 5, -1))
+
 #File path and file variables
 cwd = os.getcwd()
 file_env = dotenv.find_dotenv()
@@ -25,20 +34,18 @@ file_path_cfb_api_venues = file_path_cfb_api + 'venues'
 file_path_cfb_api_epa_per_game = file_path_cfb_api + 'epa_per_game-'
 file_path_cfb_api_coach_info = file_path_cfb_api + 'coach_info'
 file_path_cfb_api_odds_per_game = file_path_cfb_api + 'odds_per_game-'
+file_path_cfb_reports = cwd + '/reports/'
+file_path_cfb_reports_current_year = file_path_cfb_reports + str(current_year) + '/'
 
 #CFB API Variables
 cfb_api_key = os.environ.get('env_cfb_api_key')
 cfb_url = 'https://api.collegefootballdata.com/'
 headers_cfb = {'accept': 'application/json', 'Authorization': ('Bearer' + ' ' + str(cfb_api_key)), }
 
-#Year variables for CFB API
-current_year = date.today().year
-previous_year = current_year - 1
-previous_years_range = list(range(previous_year, previous_year - 5, -1))
-years = list(range(current_year, current_year - 5, -1))
-
 #Pregame Variables
 check_api_folder_exists = os.path.exists(file_path_cfb_api)
+check_reports_folder_exists = os.path.exists(file_path_cfb_reports)
+check_reports_folder_current_year_exists = os.path.exists(file_path_cfb_reports_current_year)
 previous_years_api_pull_status = os.environ.get('env_previous_years_api_pull_status')
 
 #Lists for DF's
@@ -62,12 +69,27 @@ list_df_cfb_coach_info = []
 list_df_cfb_odds_per_game = []
 
 def function_cfb_pregame_filepath_check():
-    if check_api_folder_exists == True:
-        return()
-    elif check_api_folder_exists == False:
-        os.mkdir(file_path_cfb_api)
-        return()
-
+    def function_cfb_pregame_filepath_check():
+        if check_api_folder_exists == True:
+            return()
+        elif check_api_folder_exists == False:
+            os.mkdir(file_path_cfb_api)
+            return()
+    def function_cfb_pregame_filepath_reports_check():
+        if check_reports_folder_exists == True:
+            return()
+        elif check_reports_folder_exists == False:
+            os.mkdir(file_path_cfb_reports)
+            return()
+    def function_cfb_pregame_filepath_reports_current_year_check():
+        if check_reports_folder_current_year_exists == True:
+            return()
+        elif check_reports_folder_current_year_exists == False:
+            os.mkdir(file_path_cfb_reports_current_year)
+            return()
+    function_cfb_pregame_filepath_check()
+    function_cfb_pregame_filepath_reports_check()
+    function_cfb_pregame_filepath_reports_current_year_check()
 def function_cfb_pregame_api_check():
     if len(cfb_api_key) == 64:
         return()
@@ -595,6 +617,11 @@ def  function_cfb_transform_team_records():
     #Transform Team Records
     df_cfb_team_record_all_rename = df_cfb_team_record_all.rename(columns={"year": "season"})
     df_cfb_team_record_all_select_col = df_cfb_team_record_all_rename[["team", "season","total.wins", "total.losses", "conferenceGames.wins", "conferenceGames.losses"]]
+def function_cfb_transform_team_info():
+    global df_cfb_team_info_updated
+    df_cfb_team_info_rename = df_cfb_team_info.rename(columns={"school": "team"})
+    df_cfb_team_info_updated = df_cfb_team_info_rename.loc[
+        df_cfb_team_info_rename['classification'].str.contains("fbs|fcs", case=False, na=False)]
 
 def function_cfb_transform_summary_data():
     global cfb_summary_join_record_rank_agg_zscores_epa_sorted
@@ -634,6 +661,11 @@ def function_cfb_transform_summary_data():
 
 def function_cfb_load_transformed_data():
     global cfb_all_data
+    global cfb_summary
+    global cfb_games_with_spread_analytics
+    global cfb_season_stats_by_season
+    global cfb_team_info
+
     print('Loading Datasets to xlsx')
     #Transform df's with stats and merge on games
     df_cfb_games_and_stats = pd.merge(df_cfb_season_games_all_updated, df_cfb_season_stats_all,
@@ -669,6 +701,8 @@ def function_cfb_load_transformed_data():
     #General Game data joined with odds
     df_cfb_season_games_all_updated_join_odds = pd.merge(df_cfb_season_games_all_updated, df_cfb_odds_per_game_with_calc,
                                                         left_on=['id', 'team'], right_on=['id', 'team'], how='left')
+    #CFB Team Info
+    cfb_team_info = df_cfb_team_info_updated
 
     #CFB Season Games Score Calculation
     cfb_season_games_agg_scores = df_cfb_season_games_agg_scores
@@ -710,5 +744,6 @@ function_cfb_transform_odds()
 function_cfb_transform_epa()
 function_cfb_transform_polls()
 function_cfb_transform_team_records()
+function_cfb_transform_team_info()
 function_cfb_transform_summary_data()
 function_cfb_load_transformed_data()
