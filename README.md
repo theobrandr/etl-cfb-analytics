@@ -1,7 +1,7 @@
 # etl-cfb-analytics
 An ETL for College Football data and Analytics
 
-The ETL will extract 5 years of college football data from collegefootball.com, transform data, and then load it to a CSV. 
+The ETL will extract 5 years of college football data from collegefootball.com, transform data, load it to a CSV, and automatically generate reports for the curent year by week and by matchup.  
 
 **Requirements**
 <br>In order to use this python ETL you will need:
@@ -15,6 +15,8 @@ The ETL will extract 5 years of college football data from collegefootball.com, 
 - pip install requests
 - pip install python-dotenv
 - pip install openpyxl
+- pip install matplotlib.pyplot
+- pip install seaborn
 
 **.ENV file**
 <br>An example .env file is found in this repository.
@@ -39,3 +41,7 @@ If you don't want to pull 4 years of previous data, set env_previous_years_api_p
 - Team Info
 - EPA per Game
 - Odds/Spread per Game
+
+**Reporting Currently Automatically Generated**
+- Points Scored by team for the last 5 years
+- Result of the spread by team for the last 5 years
