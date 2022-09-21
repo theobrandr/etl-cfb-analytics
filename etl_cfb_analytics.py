@@ -14,11 +14,12 @@ dotenv.load_dotenv()
 
 #Variables
 
-#Year variables for CFB API
+#Year and week variables for CFB API
 current_year = date.today().year
 previous_year = current_year - 1
 previous_years_range = list(range(previous_year, previous_year - 5, -1))
 years = list(range(current_year, current_year - 5, -1))
+weeks = list(range(1,16))
 
 #File path and file variables
 cwd = os.getcwd()
@@ -87,9 +88,20 @@ def function_cfb_pregame_filepath_check():
         elif check_reports_folder_current_year_exists == False:
             os.mkdir(file_path_cfb_reports_current_year)
             return()
+    def function_cfb_pregame_filepath_reports_current_year__weeks_check():
+        for week in weeks:
+            file_path_cfb_reports_current_year_week = file_path_cfb_reports_current_year + 'Week_' + str(week) + '/'
+            check_reports_folder_current_year_week_exists = os.path.exists(str(file_path_cfb_reports_current_year_week))
+            if check_reports_folder_current_year_week_exists == True:
+                continue
+            elif check_reports_folder_current_year_week_exists == False:
+                os.mkdir(file_path_cfb_reports_current_year_week)
+                continue
+
     function_cfb_pregame_filepath_check()
     function_cfb_pregame_filepath_reports_check()
     function_cfb_pregame_filepath_reports_current_year_check()
+    function_cfb_pregame_filepath_reports_current_year__weeks_check()
 def function_cfb_pregame_api_check():
     if len(cfb_api_key) == 64:
         return()
@@ -438,6 +450,7 @@ def function_cfb_transform_season_stats():
 
 def function_cfb_transform_games_and_stats():
     global df_cfb_season_games_all_updated
+    global df_cfb_season_games_all
     print('Transforming Game Matchups')
     # Clean up Team Info Data
     df_drop_cfb_teaminfo = df_cfb_team_info.dropna(subset=['conference'])
@@ -620,8 +633,7 @@ def  function_cfb_transform_team_records():
 def function_cfb_transform_team_info():
     global df_cfb_team_info_updated
     df_cfb_team_info_rename = df_cfb_team_info.rename(columns={"school": "team"})
-    df_cfb_team_info_updated = df_cfb_team_info_rename.loc[
-        df_cfb_team_info_rename['classification'].str.contains("fbs|fcs", case=False, na=False)]
+    df_cfb_team_info_updated = df_cfb_team_info_rename.loc[df_cfb_team_info_rename['classification'].str.contains("fbs|fcs", case=False, na=False)]
 
 def function_cfb_transform_summary_data():
     global cfb_summary_join_record_rank_agg_zscores_epa_sorted
@@ -659,14 +671,16 @@ def function_cfb_transform_summary_data():
                                                             right_on=['team', 'season'], how='left')
     cfb_summary_join_record_rank_agg_zscores_epa_sorted = cfb_summary_join_record_rank_agg_zscores_epa.sort_values(by=['team', 'season'], ascending=True, na_position='first')
 
-def function_cfb_load_transformed_data():
+def function_cfb_transform_data_for_load():
     global cfb_all_data
     global cfb_summary
     global cfb_games_with_spread_analytics
     global cfb_season_stats_by_season
     global cfb_team_info
+    global cfb_season_week_matchups
+    global cfb_season_week_matchups_home_updated
 
-    print('Loading Datasets to xlsx')
+    print('Transforming datasets for loading')
     #Transform df's with stats and merge on games
     df_cfb_games_and_stats = pd.merge(df_cfb_season_games_all_updated, df_cfb_season_stats_all,
                                       left_on=['team','season'], right_on=['team','season'], how='left')
@@ -692,6 +706,15 @@ def function_cfb_load_transformed_data():
     #Transform Join Rankings/Games/Stats/Agg Scores/EPA with Odds
     df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds = pd.merge(df_cfb_games_stats_agg_scores_rankings_team_records_epa, df_cfb_odds_per_game_with_calc,
         left_on=['id', 'team'], right_on=['id', 'team'], how='left')
+    for col in df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds:
+        # get dtype for column
+        datatype = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds[col].dtype
+        # check if it is a number
+        if datatype == int or datatype == float:
+            df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds[col].fillna(0, inplace=True)
+        else:
+            df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds[col].fillna("No Data", inplace=True)
+
 
     #Transform Join Coach Poll / Rankings with Games/Stats/Agg Scores df
     df_cfb_season_games_all_updated_join_rankings = pd.merge(df_cfb_season_games_all_updated, df_cfb_ranking_all_updated,
@@ -701,6 +724,19 @@ def function_cfb_load_transformed_data():
     #General Game data joined with odds
     df_cfb_season_games_all_updated_join_odds = pd.merge(df_cfb_season_games_all_updated, df_cfb_odds_per_game_with_calc,
                                                         left_on=['id', 'team'], right_on=['id', 'team'], how='left')
+    for col in df_cfb_season_games_all_updated_join_odds:
+        # get dtype for column
+        datatype = df_cfb_season_games_all_updated_join_odds[col].dtype
+        # check if it is a number
+        if datatype == int or datatype == float:
+            df_cfb_season_games_all_updated_join_odds[col].fillna(0, inplace=True)
+        else:
+            df_cfb_season_games_all_updated_join_odds[col].fillna("No Data", inplace=True)
+
+    #CFB Games/Matchups by Season and Week
+    cfb_season_week_matchups = df_cfb_season_games_all
+    cfb_season_week_matchups_home_updated = df_cfb_season_games_all_updated
+
     #CFB Team Info
     cfb_team_info = df_cfb_team_info_updated
 
@@ -721,7 +757,38 @@ def function_cfb_load_transformed_data():
 
     #CFB All Data
     cfb_all_data = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds
+def function_cfb_reporting_current_year():
+    print('Generating Reports')
+    df_cfb_for_reporting_game_matchup = cfb_season_week_matchups.loc[cfb_season_week_matchups['season'].astype(str).str.contains(str(current_year), regex=False, case=False, na=False)]
+    for week in cfb_season_week_matchups['week']:
+        file_path_cfb_reports_current_year_week = file_path_cfb_reports_current_year + 'Week_' + str(week) + '/'
+        for index, row in df_cfb_for_reporting_game_matchup.iterrows():
+            home_team = row['home_team']
+            away_team = row['away_team']
+            matchup = row['Game Matchup']
+            df_home_team = cfb_all_data.loc[cfb_all_data['team'] == home_team]
+            df_away_team = cfb_all_data.loc[cfb_all_data['team'] == away_team]
+            home_team_color = cfb_team_info.loc[cfb_team_info['team'] == home_team, 'color'].iloc[0]
+            away_team_color = cfb_team_info.loc[cfb_team_info['team'] == away_team, 'color'].iloc[0]
+            df_home_away_append = pd.concat([df_home_team,df_away_team],ignore_index=True)
 
+            fig_matchup_team_points = sns.catplot(data=df_home_away_append, x="week", y="points", col="season", kind='bar', hue="team", palette={home_team:home_team_color, away_team:away_team_color})
+            fig_matchup_result_of_the_spread = sns.catplot(data=df_home_away_append, x="result_of_the_spread", kind="count", col="season", hue="team", palette={home_team:home_team_color, away_team:away_team_color})
+            fig_matchup_result_of_the_spread.set_xticklabels(rotation=65, horizontalalignment='right')
+
+            list_figures = [fig_matchup_team_points, fig_matchup_result_of_the_spread]
+
+            filename_team_report = file_path_cfb_reports_current_year_week + str(matchup) + ".pdf"
+            pp = PdfPages(filename_team_report)
+            for fig in list_figures:
+                fig.savefig(pp, format='pdf')
+            pp.close()
+            plt.close('all')
+            print('Report Generated for ' + str(matchup))
+
+
+def funtion_cfb_load_to_excel():
+    print('Loading Datasets to xlsx')
     with pd.ExcelWriter(str(file_path_cfb) + '/cfb.xlsx') as writer:
         cfb_summary.to_excel(writer, sheet_name='cfb_summary', engine='xlsxwriter')
         cfb_games_with_spread_analytics.to_excel(writer, sheet_name='cfb_games_spread', engine='xlsxwriter')
@@ -746,4 +813,7 @@ function_cfb_transform_polls()
 function_cfb_transform_team_records()
 function_cfb_transform_team_info()
 function_cfb_transform_summary_data()
-function_cfb_load_transformed_data()
+function_cfb_transform_data_for_load()
+function_cfb_reporting_current_year()
+funtion_cfb_load_to_excel()
+
