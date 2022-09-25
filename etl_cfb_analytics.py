@@ -386,7 +386,7 @@ def function_cfb_transform_season_stats():
         df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_zscore'] = (df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'] - df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'].mean()) / df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'].std()
         df_cfb_season_stats_all_for_loop['offense_fourthDowns_zscore'] = (df_cfb_season_stats_all_for_loop['offense_fourthDowns'] - df_cfb_season_stats_all_for_loop['offense_fourthDowns'].mean()) / df_cfb_season_stats_all_for_loop['offense_fourthDowns'].std()
         #Calculate Actual Fourth Down Completion Percentage
-        df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'] = (df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'] - df_cfb_season_stats_all_for_loop['offense_fourthDowns'])
+        df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'] = (df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'] / df_cfb_season_stats_all_for_loop['offense_fourthDowns'])
         df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent_zscore'] = (df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'] - df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'].mean()) / df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'].std()
         #Pass Attempts and Completions
         df_cfb_season_stats_all_for_loop['offense_passAttempts_zscore'] = (df_cfb_season_stats_all_for_loop['offense_passAttempts'] - df_cfb_season_stats_all_for_loop['offense_passAttempts'].mean()) / df_cfb_season_stats_all_for_loop['offense_passAttempts'].std()
@@ -398,13 +398,13 @@ def function_cfb_transform_season_stats():
         df_cfb_season_stats_all_for_loop['offense_rushingAttempts_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingAttempts'] - df_cfb_season_stats_all_for_loop['offense_rushingAttempts'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingAttempts'].std()
         df_cfb_season_stats_all_for_loop['offense_rushingYards_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingYards'] - df_cfb_season_stats_all_for_loop['offense_rushingYards'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingYards'].std()
         #Calculate Average Rushing Yards
-        df_cfb_season_stats_all_for_loop['offense_rushingYards_perAttempt_percent'] = (df_cfb_season_stats_all_for_loop['offense_rushingYards'] - df_cfb_season_stats_all_for_loop['offense_rushingAttempts'])
-        df_cfb_season_stats_all_for_loop['offense_rushingYards_perAttempt_percent_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingYards_perAttempt_percent'] - df_cfb_season_stats_all_for_loop['offense_rushingYards_perAttempt_percent'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingYards_perAttempt_percent'].std()
+        df_cfb_season_stats_all_for_loop['offense_rushingYards_average'] = (df_cfb_season_stats_all_for_loop['offense_rushingYards'] / df_cfb_season_stats_all_for_loop['offense_rushingAttempts'])
+        df_cfb_season_stats_all_for_loop['offense_rushingYards_average_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingYards_average'] - df_cfb_season_stats_all_for_loop['offense_rushingYards_average'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingYards_average'].std()
         #Third Downs and Third Down conversions
         df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_zscore'] = (df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'] - df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'].mean()) / df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'].std()
         df_cfb_season_stats_all_for_loop['offense_thirdDowns_zscore'] = (df_cfb_season_stats_all_for_loop['offense_thirdDowns'] - df_cfb_season_stats_all_for_loop['offense_thirdDowns'].mean()) / df_cfb_season_stats_all_for_loop['offense_thirdDowns'].std()
         #Calculate Actual Third Down Completion Percentage
-        df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'] = (df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'] - df_cfb_season_stats_all_for_loop['offense_thirdDowns'])
+        df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'] = (df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'] / df_cfb_season_stats_all_for_loop['offense_thirdDowns'])
         df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent_zscore'] = (df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'] - df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'].mean()) / df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'].std()
         #Totals and other stats
         df_cfb_season_stats_all_for_loop['offense_rushingTDs_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingTDs'] - df_cfb_season_stats_all_for_loop['offense_rushingTDs'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingTDs'].std()
@@ -453,29 +453,32 @@ def function_cfb_transform_games_and_stats():
     global df_cfb_season_games_all
     print('Transforming Game Matchups')
     # Clean up Team Info Data
-    df_drop_cfb_teaminfo = df_cfb_team_info.dropna(subset=['conference'])
-    df_select_col_cfb_teaminfo = df_drop_cfb_teaminfo[["id", "school", "conference", "location.venue_id","location.name","location.zip"]]
+    df_cfb_teaminfo_drop = df_cfb_team_info.dropna(subset=['conference'])
+    df_select_col_cfb_teaminfo = df_cfb_teaminfo_drop[["id", "school", "conference", "location.venue_id","location.name","location.zip"]]
 
-    #Add Column for Game Matchup and calculate average points given up by week
+    #Add Columns for Game Matchup and Date without timestamps
     df_cfb_season_games_all["Game Matchup"] = df_cfb_season_games_all[['away_team', 'home_team']].apply(" @ ".join, axis=1)
+    df_cfb_season_games_all['start_date'] = df_cfb_season_games_all['start_date'].str.replace('.000Z', '')
+    df_cfb_season_games_all['start_date'] = pd.to_datetime(df_cfb_season_games_all['start_date'],infer_datetime_format=True, errors='coerce')
+    df_cfb_season_games_all["date"] = df_cfb_season_games_all["start_date"].dt.date
+    cfb_season_games_all_date_col = df_cfb_season_games_all['date']
+    df_cfb_season_games_all.drop(labels=['date'], axis=1, inplace=True)
+    df_cfb_season_games_all.insert(6, 'date', cfb_season_games_all_date_col)
 
     #Split the home v away into 2 df
-    df_cfb_season_games_all_home = df_cfb_season_games_all[["id", "Game Matchup", "season", "week", "start_date", "conference_game", "home_team", "home_conference", "home_points"]]
+    df_cfb_season_games_all_home = df_cfb_season_games_all[["id", "Game Matchup", "season", "week", "start_date", "date", "conference_game", "home_team", "home_conference", "home_points"]]
     df_cfb_season_games_all_home.rename(columns={"home_team": "team", "home_conference": "conference","home_points": "points"},inplace=True)
     df_cfb_season_games_all_home.insert(7, "home_vs_away", 'home')
-    df_cfb_season_games_all_away = df_cfb_season_games_all[["id", "Game Matchup", "season", "week", "start_date", "conference_game", "away_team", "away_conference", "away_points"]]
+    df_cfb_season_games_all_away = df_cfb_season_games_all[["id", "Game Matchup", "season", "week", "start_date","date", "conference_game", "away_team", "away_conference", "away_points"]]
     df_cfb_season_games_all_away.rename(columns={"away_team": "team", "away_conference": "conference", "away_points": "points"},inplace=True)
     df_cfb_season_games_all_away.insert(7, "home_vs_away", 'away')
 
     #Merge home and away df back together and sort them into order
     df_cfb_season_games_all_append = df_cfb_season_games_all_home.append(df_cfb_season_games_all_away)
-    df_cfb_season_games_all_append['start_date'] = df_cfb_season_games_all_append['start_date'].str.replace('.000Z','')
-    df_cfb_season_games_all_append['start_date'] = pd.to_datetime(df_cfb_season_games_all_append['start_date'],infer_datetime_format=True,errors='coerce')
     df_cfb_season_games_all_append.sort_values(by=['start_date','id'], inplace=True, ascending=True)
     df_cfb_season_games_all_updated = df_cfb_season_games_all_append
     df_cfb_season_games_all_updated.fillna(0, inplace=True)
     df_cfb_season_games_all_updated['points'].astype('int64')
-    df_cfb_season_games_all_updated["date"] = pd.to_datetime(df_cfb_season_games_all_updated["start_date"], format="%Y/%m/%d")
 
 def function_cfb_transform_games_and_agg_scores():
     global df_cfb_season_games_agg_scores
@@ -635,6 +638,18 @@ def function_cfb_transform_team_info():
     df_cfb_team_info_rename = df_cfb_team_info.rename(columns={"school": "team"})
     df_cfb_team_info_updated = df_cfb_team_info_rename.loc[df_cfb_team_info_rename['classification'].str.contains("fbs|fcs", case=False, na=False)]
 
+def function_cfb_transform_week():
+    global current_week
+    date_today = date.today()
+    df_cfb_date_group_bys = df_cfb_season_games_all.groupby(['season','week'])['date'].first().reset_index()
+    df_cfb_date_group_bys['date_script_run'] = date_today
+    df_cfb_date_group_bys['date_diff'] = (df_cfb_date_group_bys['date'] - df_cfb_date_group_bys['date_script_run']).dt.days
+    df_cfb_date_group_bys['current_week_identifier'] = 'Check ETL'
+    df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] >= 0) & (df_cfb_date_group_bys['date_diff'] < 7),'current_week_identifier'] = 'Current Week'
+    df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 7), 'current_week_identifier'] = 'Future Week'
+    df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < 0), 'current_week_identifier'] = 'Past Week'
+    df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
+    current_week = df_cfb_date_current_week['week'].to_string(index=False)
 def function_cfb_transform_summary_data():
     global cfb_summary_join_record_rank_agg_zscores_epa_sorted
     print('Transforming Summary Dataset')
@@ -758,11 +773,12 @@ def function_cfb_transform_data_for_load():
     #CFB All Data
     cfb_all_data = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds
 def function_cfb_reporting_current_year():
-    print('Generating Reports')
+    print('Generating Reports for current week of the year')
     df_cfb_for_reporting_game_matchup = cfb_season_week_matchups.loc[cfb_season_week_matchups['season'].astype(str).str.contains(str(current_year), regex=False, case=False, na=False)]
+    df_cfb_for_reporting_game_matchup_current_week = df_cfb_for_reporting_game_matchup.loc[df_cfb_for_reporting_game_matchup['week'].astype(str).str.contains(str(current_week), regex=False, case=False, na=False)]
     for week in cfb_season_week_matchups['week']:
-        file_path_cfb_reports_current_year_week = file_path_cfb_reports_current_year + 'Week_' + str(week) + '/'
-        for index, row in df_cfb_for_reporting_game_matchup.iterrows():
+        file_path_cfb_reports_current_year_week = file_path_cfb_reports_current_year + 'Week_' + str(current_week) + '/'
+        for index, row in df_cfb_for_reporting_game_matchup_current_week.iterrows():
             home_team = row['home_team']
             away_team = row['away_team']
             matchup = row['Game Matchup']
@@ -772,20 +788,43 @@ def function_cfb_reporting_current_year():
             away_team_color = cfb_team_info.loc[cfb_team_info['team'] == away_team, 'color'].iloc[0]
             df_home_away_append = pd.concat([df_home_team,df_away_team],ignore_index=True)
 
+            #Create DF for Matchup Summary
+            df_home_away_append_sel_col = df_home_away_append[['Game Matchup', 'season', 'week', 'start_date', 'conference_game',
+                                                               'team']]
+            df_matchup_summary = df_home_away_append_sel_col.loc[
+                df_home_away_append_sel_col['season'].astype(str).str.contains(str(current_year), regex=False, case=False,na=False)].loc[
+                df_home_away_append_sel_col['week'].astype(str).str.contains(str(current_week), regex=False, case=False, na=False)]
+
+            fig_df_matchup_summary = plt.figure(figsize=(9, 2))
+            ax = plt.subplot(111)
+            ax.axis('off')
+            ax.table(cellText=df_matchup_summary.values, colLabels=df_matchup_summary.columns)
+
+            #Create figures for report
             fig_matchup_team_points = sns.catplot(data=df_home_away_append, x="week", y="points", col="season", kind='bar', hue="team", palette={home_team:home_team_color, away_team:away_team_color})
             fig_matchup_result_of_the_spread = sns.catplot(data=df_home_away_append, x="result_of_the_spread", kind="count", col="season", hue="team", palette={home_team:home_team_color, away_team:away_team_color})
             fig_matchup_result_of_the_spread.set_xticklabels(rotation=65, horizontalalignment='right')
+            fig_matchup_offense_netPassingYards = sns.catplot(data=df_home_away_append, x="season",
+                                                            y="offense_netPassingYards", hue="team",
+                                                            palette={home_team:home_team_color, away_team:away_team_color})
+            fig_matchup_passing_yards_percent = sns.catplot(data=df_home_away_append, x="season",
+                                                            y="offense_passCompletion_Conversions_percent", hue="team",
+                                                            palette={home_team: home_team_color,
+                                                                     away_team: away_team_color})
+            fig_matchup_total_zscore_by_season = sns.lmplot(data=df_home_away_append,x="season", y="total_zscore", hue="team", palette={home_team:home_team_color, away_team:away_team_color})
 
-            list_figures = [fig_matchup_team_points, fig_matchup_result_of_the_spread]
+            #Add all figures to a list for printing
+            list_figures = [fig_matchup_team_points, fig_matchup_result_of_the_spread, fig_matchup_offense_netPassingYards, fig_matchup_passing_yards_percent, fig_matchup_total_zscore_by_season]
 
+            #Output DF's and Figures to Report
             filename_team_report = file_path_cfb_reports_current_year_week + str(matchup) + ".pdf"
             pp = PdfPages(filename_team_report)
+            pp.savefig(fig_df_matchup_summary, bbox_inches='tight')
             for fig in list_figures:
                 fig.savefig(pp, format='pdf')
             pp.close()
             plt.close('all')
             print('Report Generated for ' + str(matchup))
-
 
 def funtion_cfb_load_to_excel():
     print('Loading Datasets to xlsx')
@@ -812,6 +851,7 @@ function_cfb_transform_epa()
 function_cfb_transform_polls()
 function_cfb_transform_team_records()
 function_cfb_transform_team_info()
+function_cfb_transform_week()
 function_cfb_transform_summary_data()
 function_cfb_transform_data_for_load()
 function_cfb_reporting_current_year()
