@@ -7,6 +7,7 @@ import requests
 import dotenv
 import openpyxl
 from datetime import date
+from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
@@ -32,9 +33,10 @@ file_path_cfb_api_season_stats = file_path_cfb_api + 'season-stats-'
 file_path_cfb_api_season_rankings = file_path_cfb_api + 'season-rankings-'
 file_path_cfb_api_team_info = file_path_cfb_api + 'team-info'
 file_path_cfb_api_venues = file_path_cfb_api + 'venues'
-file_path_cfb_api_epa_per_game = file_path_cfb_api + 'epa_per_game-'
-file_path_cfb_api_coach_info = file_path_cfb_api + 'coach_info'
-file_path_cfb_api_odds_per_game = file_path_cfb_api + 'odds_per_game-'
+file_path_cfb_api_epa_per_game = file_path_cfb_api + 'epa-per-game-'
+file_path_cfb_api_coach_info = file_path_cfb_api + 'coach-info'
+file_path_cfb_api_odds_per_game = file_path_cfb_api + 'odds-per-game-'
+file_path_cfb_api_stats_per_game = file_path_cfb_api + 'stats-per-game-'
 file_path_cfb_reports = cwd + '/reports/'
 file_path_cfb_reports_current_year = file_path_cfb_reports + str(current_year) + '/'
 
@@ -59,6 +61,7 @@ list_venues = []
 list_epa_per_game = []
 list_coach_info = []
 list_odds_per_game = []
+list_stats_per_game=[]
 
 list_df_cfb_season_games = []
 list_df_cfb_team_record = []
@@ -68,6 +71,7 @@ list_df_cfb_rankings_all = []
 list_df_cfb_epa_per_game = []
 list_df_cfb_coach_info = []
 list_df_cfb_odds_per_game = []
+list_df_cfb_stats_per_game=[]
 
 def function_cfb_pregame_filepath_check():
     def function_cfb_pregame_filepath_check():
@@ -172,6 +176,7 @@ def function_cfb_extract_previous_years_api_pulls():
         list_epa_per_game.append(response_epa_per_game)
         open(str(file_path_cfb_api_epa_per_game) + str(season_year) + '.json', 'wb').write(response_epa_per_game.content)
 
+        #Odds Per Game
         try:
             response_odds_per_game = requests.get(
                 (str(cfb_url + str('metrics/wp/pregame?year=' + str(season_year) + '&seasonType=regular'))),
@@ -180,6 +185,16 @@ def function_cfb_extract_previous_years_api_pulls():
             print("Error: ", error)
         list_odds_per_game.append(response_odds_per_game)
         open(str(file_path_cfb_api_odds_per_game) + str(season_year) + '.json', 'wb').write(response_odds_per_game.content)
+
+        #Stats per Game
+        try:
+            response_stats_per_game = requests.get(
+                (str(cfb_url + str('stats/game/advanced?year=' + str(season_year)))),
+                headers=headers_cfb)
+        except requests.exceptions.RequestException as error:
+            print("Error: ", error)
+        list_stats_per_game.append(response_stats_per_game)
+        open(str(file_path_cfb_api_stats_per_game) + str(season_year) + '.json', 'wb').write(response_stats_per_game.content)
 
 
 def function_cfb_extract_current_year_api_pull():
@@ -242,6 +257,16 @@ def function_cfb_extract_current_year_api_pull():
     list_odds_per_game.append(response_odds_per_game)
     open(str(file_path_cfb_api_odds_per_game) + str(current_year) + '.json', 'wb').write(response_odds_per_game.content)
 
+    # Get Stats per Game
+    try:
+        response_stats_per_game = requests.get(
+            (str(cfb_url + str('stats/game/advanced?year=' + str(current_year)))),
+            headers=headers_cfb)
+    except requests.exceptions.RequestException as error:
+        print("Error: ", error)
+    list_stats_per_game.append(response_stats_per_game)
+    open(str(file_path_cfb_api_stats_per_game) + str(current_year) + '.json', 'wb').write(response_stats_per_game.content)
+
 def function_cfb_extract_team_info_api_pull():
     #Get Team Info
     try:
@@ -283,6 +308,8 @@ def function_cfb_extract_json_to_df():
     global df_cfb_coach_info
     global df_cfb_epa_per_game_all
     global df_cfb_odds_per_game_all
+    global df_cfb_stats_per_game_all
+
     print('Extracting json data and converting to dataframes')
     for year in years:
         #Load season games data from json to dataframe
@@ -327,12 +354,21 @@ def function_cfb_extract_json_to_df():
                 list_df_cfb_odds_per_game.append(pd.json_normalize(cfb_odds_per_game_json, errors='ignore'))
         except Exception:
             continue
+        #Load stats per game data from json to list
+        try:
+            with open(str(file_path_cfb_api_stats_per_game) + str(year) + '.json') as cfb_stats_per_game_json_file:
+                cfb_stats_per_game_json = json.load(cfb_stats_per_game_json_file)
+                list_df_cfb_stats_per_game.append(pd.json_normalize(cfb_stats_per_game_json, errors='ignore'))
+        except Exception:
+            continue
+
     #Concat lists of df's into one df
     df_cfb_season_games_all = pd.concat(list_df_cfb_season_games)
     df_cfb_team_record_all = pd.concat(list_df_cfb_team_record)
     df_cfb_ranking_all = pd.concat(list_df_cfb_rankings_all)
     df_cfb_epa_per_game_all = pd.concat(list_df_cfb_epa_per_game)
     df_cfb_odds_per_game_all = pd.concat(list_df_cfb_odds_per_game)
+    df_cfb_stats_per_game_all = pd.concat(list_df_cfb_stats_per_game)
 
     #Load Venue data
     with open(str(file_path_cfb_api_venues) + '.json') as cfb_venue_json_file:
@@ -627,12 +663,18 @@ def function_cfb_transform_polls():
     df_cfb_ranking_groupby_ap = df_cfb_ranking_all_drop.groupby(['team', 'season'])['AP Top 25 by Week'].agg(", ".join).reset_index()
     df_cfb_ranking_all_updated = df_cfb_ranking_all_drop
 
-def  function_cfb_transform_team_records():
+def function_cfb_transform_team_records():
     global df_cfb_team_record_all_select_col
     print('Transforming Team Records')
     #Transform Team Records
     df_cfb_team_record_all_rename = df_cfb_team_record_all.rename(columns={"year": "season"})
     df_cfb_team_record_all_select_col = df_cfb_team_record_all_rename[["team", "season","total.wins", "total.losses", "conferenceGames.wins", "conferenceGames.losses"]]
+def function_cfb_transform_stats_per_game():
+    global df_cfb_stats_per_game
+    print('Transforming Stats per game')
+    #Transform Stats per Game
+    df_cfb_stats_per_game_rename = df_cfb_stats_per_game_all.rename(columns={"gameId": "id"})
+    df_cfb_stats_per_game = df_cfb_stats_per_game_rename.drop(columns=['opponent'])
 def function_cfb_transform_team_info():
     global df_cfb_team_info_updated
     df_cfb_team_info_rename = df_cfb_team_info.rename(columns={"school": "team"})
@@ -641,15 +683,53 @@ def function_cfb_transform_team_info():
 def function_cfb_transform_week():
     global current_week
     date_today = date.today()
+    date_today_day = date.today().strftime('%A')
     df_cfb_date_group_bys = df_cfb_season_games_all.groupby(['season','week'])['date'].first().reset_index()
     df_cfb_date_group_bys['date_script_run'] = date_today
     df_cfb_date_group_bys['date_diff'] = (df_cfb_date_group_bys['date'] - df_cfb_date_group_bys['date_script_run']).dt.days
     df_cfb_date_group_bys['current_week_identifier'] = 'Check ETL'
-    df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] >= 0) & (df_cfb_date_group_bys['date_diff'] < 7),'current_week_identifier'] = 'Current Week'
-    df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 7), 'current_week_identifier'] = 'Future Week'
-    df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < 0), 'current_week_identifier'] = 'Past Week'
-    df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
-    current_week = df_cfb_date_current_week['week'].to_string(index=False)
+    if date_today_day == 'Sunday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] == 4),'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 4), 'current_week_identifier'] = 'Future Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < 4), 'current_week_identifier'] = 'Past Week'
+        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
+        current_week = df_cfb_date_current_week['week'].to_string(index=False)
+    elif date_today_day == 'Monday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] == 3),'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 3), 'current_week_identifier'] = 'Future Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < 3), 'current_week_identifier'] = 'Past Week'
+        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
+        current_week = df_cfb_date_current_week['week'].to_string(index=False)
+    elif date_today_day == 'Tuesday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] == 2),'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 2), 'current_week_identifier'] = 'Future Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < 2), 'current_week_identifier'] = 'Past Week'
+        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
+        current_week = df_cfb_date_current_week['week'].to_string(index=False)
+    elif date_today_day == 'Wednesday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] == 1),'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 1), 'current_week_identifier'] = 'Future Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < 1), 'current_week_identifier'] = 'Past Week'
+        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
+        current_week = df_cfb_date_current_week['week'].to_string(index=False)
+    elif date_today_day == 'Thursday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] == 0),'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 0), 'current_week_identifier'] = 'Future Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < 0), 'current_week_identifier'] = 'Past Week'
+        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
+        current_week = df_cfb_date_current_week['week'].to_string(index=False)
+    elif date_today_day == 'Friday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] >= -1),'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > -1), 'current_week_identifier'] = 'Future Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < -1), 'current_week_identifier'] = 'Past Week'
+        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
+        current_week = df_cfb_date_current_week['week'].to_string(index=False)
+    elif date_today_day == 'Saturday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] == -2), 'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > -2), 'current_week_identifier'] = 'Future Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < -2), 'current_week_identifier'] = 'Past Week'
+        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
+        current_week = df_cfb_date_current_week['week'].to_string(index=False)
 def function_cfb_transform_summary_data():
     global cfb_summary_join_record_rank_agg_zscores_epa_sorted
     print('Transforming Summary Dataset')
@@ -694,6 +774,10 @@ def function_cfb_transform_data_for_load():
     global cfb_team_info
     global cfb_season_week_matchups
     global cfb_season_week_matchups_home_updated
+    global cfb_stats_per_game
+    global cfb_matchup_with_stats_per_game
+    global cfb_season_games_agg_scores
+    global cfb_team_record_by_year
 
     print('Transforming datasets for loading')
     #Transform df's with stats and merge on games
@@ -731,10 +815,22 @@ def function_cfb_transform_data_for_load():
             df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds[col].fillna("No Data", inplace=True)
 
 
+    #Transform Join Rankings/Games/Stats/Agg Scores/Records with Stats per game
+    df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame = pd.merge(df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds,
+                                                                   df_cfb_stats_per_game,
+                                                                   left_on=['team', 'week', 'id'],
+                                                                   right_on=['team', 'week', 'id'], how='left')
+
+
     #Transform Join Coach Poll / Rankings with Games/Stats/Agg Scores df
     df_cfb_season_games_all_updated_join_rankings = pd.merge(df_cfb_season_games_all_updated, df_cfb_ranking_all_updated,
                                                       left_on=['team', 'week', 'season'],
                                                       right_on=['team', 'week', 'season'], how='left')
+
+    #Transform Join Game Matchups with Stats per game
+    df_cfb_season_games_all_updated_join_stats_per_game = pd.merge(df_cfb_season_games_all_updated, df_cfb_stats_per_game,
+                                                      left_on=['team', 'week', 'id'],
+                                                      right_on=['team', 'week', 'id'], how='left')
 
     #General Game data joined with odds
     df_cfb_season_games_all_updated_join_odds = pd.merge(df_cfb_season_games_all_updated, df_cfb_odds_per_game_with_calc,
@@ -767,11 +863,17 @@ def function_cfb_transform_data_for_load():
     #CFB Games with all advanced stats
     cfb_season_stats_by_season = df_cfb_season_stats_all
 
+    #CFB Stats per Game
+    cfb_stats_per_game = df_cfb_stats_per_game
+
+    #CFB Stats per Game with Matchup
+    cfb_matchup_with_stats_per_game = df_cfb_season_games_all_updated_join_stats_per_game
+
     #CFB Summary Data
     cfb_summary = cfb_summary_join_record_rank_agg_zscores_epa_sorted
 
     #CFB All Data
-    cfb_all_data = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds
+    cfb_all_data = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame
 def function_cfb_reporting_current_year():
     print('Generating Reports for current week of the year')
     df_cfb_for_reporting_game_matchup = cfb_season_week_matchups.loc[cfb_season_week_matchups['season'].astype(str).str.contains(str(current_year), regex=False, case=False, na=False)]
@@ -786,7 +888,7 @@ def function_cfb_reporting_current_year():
             df_away_team = cfb_all_data.loc[cfb_all_data['team'] == away_team]
             home_team_color = cfb_team_info.loc[cfb_team_info['team'] == home_team, 'color'].iloc[0]
             away_team_color = cfb_team_info.loc[cfb_team_info['team'] == away_team, 'color'].iloc[0]
-            df_home_away_append = pd.concat([df_home_team,df_away_team],ignore_index=True)
+            df_home_away_append = pd.concat([df_home_team, df_away_team], ignore_index=True)
 
             #Create DF for Matchup Summary
             df_home_away_append_sel_col = df_home_away_append[['Game Matchup', 'season', 'week', 'start_date', 'conference_game',
@@ -801,20 +903,41 @@ def function_cfb_reporting_current_year():
             ax.table(cellText=df_matchup_summary.values, colLabels=df_matchup_summary.columns)
 
             #Create figures for report
-            fig_matchup_team_points = sns.catplot(data=df_home_away_append, x="week", y="points", col="season", kind='bar', hue="team", palette={home_team:home_team_color, away_team:away_team_color})
-            fig_matchup_result_of_the_spread = sns.catplot(data=df_home_away_append, x="result_of_the_spread", kind="count", col="season", hue="team", palette={home_team:home_team_color, away_team:away_team_color})
+            fig_matchup_team_points = sns.catplot(data=df_home_away_append, x="week", y="points",
+                                                  col="season", kind='bar', hue="team",
+                                                  height=4, aspect=1,
+                                                  palette={home_team:home_team_color, away_team:away_team_color})
+
+            fig_matchup_result_of_the_spread = sns.catplot(data=df_home_away_append, x="result_of_the_spread",
+                                                           kind="count", col="season", hue="team",
+                                                           height=4, aspect=1,
+                                                           palette={home_team:home_team_color, away_team:away_team_color})
             fig_matchup_result_of_the_spread.set_xticklabels(rotation=65, horizontalalignment='right')
+
             fig_matchup_offense_netPassingYards = sns.catplot(data=df_home_away_append, x="season",
                                                             y="offense_netPassingYards", hue="team",
+                                                            height=4, aspect=1,
                                                             palette={home_team:home_team_color, away_team:away_team_color})
+
             fig_matchup_passing_yards_percent = sns.catplot(data=df_home_away_append, x="season",
                                                             y="offense_passCompletion_Conversions_percent", hue="team",
+                                                            height=4, aspect=1,
                                                             palette={home_team: home_team_color,
                                                                      away_team: away_team_color})
-            fig_matchup_total_zscore_by_season = sns.lmplot(data=df_home_away_append,x="season", y="total_zscore", hue="team", palette={home_team:home_team_color, away_team:away_team_color})
+
+            fig_matchup_total_zscore_by_season = sns.lmplot(data=df_home_away_append, x="season", y="total_zscore",
+                                                            hue="team", height=4, aspect=1,
+                                                            palette={home_team:home_team_color, away_team:away_team_color})
+            fig_matchup_total_zscore_by_season.set_xticklabels(rotation=65, horizontalalignment='right')
+
+            fig_matchup_defense_success_by_game = sns.lmplot(data=df_home_away_append, x="week", y="defense.successRate",
+                                                            hue="team", height=4, aspect=1,
+                                                            palette={home_team: home_team_color,
+                                                                     away_team: away_team_color})
+            fig_matchup_total_zscore_by_season.set_xticklabels(rotation=65, horizontalalignment='right')
 
             #Add all figures to a list for printing
-            list_figures = [fig_matchup_team_points, fig_matchup_result_of_the_spread, fig_matchup_offense_netPassingYards, fig_matchup_passing_yards_percent, fig_matchup_total_zscore_by_season]
+            list_figures = [fig_matchup_team_points, fig_matchup_result_of_the_spread, fig_matchup_offense_netPassingYards, fig_matchup_passing_yards_percent, fig_matchup_total_zscore_by_season,fig_matchup_defense_success_by_game]
 
             #Output DF's and Figures to Report
             filename_team_report = file_path_cfb_reports_current_year_week + str(matchup) + ".pdf"
@@ -834,14 +957,16 @@ def funtion_cfb_load_to_excel():
         cfb_season_stats_by_season.to_excel(writer, sheet_name='cfb_season_stats_by_season', engine='xlsxwriter')
         cfb_season_games_agg_scores.to_excel(writer, sheet_name='cfb_games_scores', engine='xlsxwriter')
         cfb_team_record_by_year.to_excel(writer, sheet_name='cfb_team_record', engine='xlsxwriter')
+        cfb_stats_per_game.to_excel(writer, sheet_name=' cfb_stats_per_game', engine='xlsxwriter')
         cfb_all_data.to_excel(writer, sheet_name='cfb_all_data', engine='xlsxwriter')
+
 
 #CFB ETL
 function_cfb_pregame_filepath_check()
 function_cfb_pregame_api_check()
 function_cfb_pregame_api_pull_previous_years_check()
-function_cfb_extract_current_year_api_pull()
-function_cfb_extract_team_info_api_pull()
+#function_cfb_extract_current_year_api_pull()
+#function_cfb_extract_team_info_api_pull()
 function_cfb_extract_json_to_df()
 function_cfb_transform_season_stats()
 function_cfb_transform_games_and_stats()
@@ -850,6 +975,7 @@ function_cfb_transform_odds()
 function_cfb_transform_epa()
 function_cfb_transform_polls()
 function_cfb_transform_team_records()
+function_cfb_transform_stats_per_game()
 function_cfb_transform_team_info()
 function_cfb_transform_week()
 function_cfb_transform_summary_data()
