@@ -889,8 +889,8 @@ def function_cfb_reporting_current_week():
         away_team_color = cfb_team_info.loc[cfb_team_info['team'] == away_team, 'color'].iloc[0]
         df_home_away_append = pd.concat([df_home_team, df_away_team], ignore_index=True)
 
-        df_cfb_summary_home_team = cfb_summary.loc[cfb_summary['team'].astype(str).str.contains(str(home_team), regex=False, case=False, na=False)]
-        df_cfb_summary_away_team = cfb_summary.loc[cfb_summary['team'].astype(str).str.contains(str(away_team), regex=False, case=False, na=False)]
+        df_cfb_summary_home_team = cfb_summary.loc[cfb_summary['team'] == (home_team)]
+        df_cfb_summary_away_team = cfb_summary.loc[cfb_summary['team'] == (away_team)]
         df_cfb_summary_home_away_append = pd.concat([df_cfb_summary_home_team, df_cfb_summary_away_team], ignore_index=True)
 
         #Create DF and figure for Matchup Summary
@@ -920,24 +920,19 @@ def function_cfb_reporting_current_week():
 
 
         #Create figures for report
+        list_figures = []
         fig_matchup_team_points = sns.catplot(data=df_home_away_append, x="week", y="points",
                                               col="season", kind='bar', hue="team",
                                               height=4, aspect=1,
                                               palette={home_team:home_team_color, away_team:away_team_color})
+        list_figures.append(fig_matchup_team_points)
 
         fig_matchup_result_of_the_spread = sns.catplot(data=df_home_away_append, x="result_of_the_spread",
                                                        kind="count", col="season", hue="team",
                                                        height=4, aspect=1,
                                                        palette={home_team:home_team_color, away_team:away_team_color})
         fig_matchup_result_of_the_spread.set_xticklabels(rotation=65, horizontalalignment='right')
-
-        fig_matchup_defense_success_by_game = sns.lmplot(data=df_home_away_append, x="week", y="defense.successRate",
-                                                        hue="team", height=4, aspect=1, col="season",
-                                                        palette={home_team: home_team_color,
-                                                                 away_team: away_team_color})
-        fig_matchup_defense_success_by_game.set_xticklabels(rotation=65, horizontalalignment='right')
-        fig_matchup_defense_success_by_game.tight_layout()
-
+        list_figures.append(fig_matchup_result_of_the_spread)
 
         fig_combined_passing, axes = plt.subplots(1, 2, sharex=True,
                                     figsize=(10, 5))
@@ -946,18 +941,42 @@ def function_cfb_reporting_current_week():
         sns.stripplot(data=df_home_away_append, x="season", y="offense_passCompletion_Conversions_percent", hue="team",
                     ax=axes[1], palette={home_team: home_team_color, away_team: away_team_color})
         fig_combined_passing.tight_layout()
+        list_figures.append(fig_combined_passing)
 
         fig_matchup_total_zscores_high_level, axes = plt.subplots(1, 3, sharex=True, figsize=(8, 4))
-        sns.stripplot(data=df_home_away_append, x="season", y="total_zscore", hue="team", ax=axes[0],
+        sns.stripplot(data=df_cfb_summary_home_away_append, x="season", y="total_zscore", hue="team", ax=axes[0],
                       palette={home_team: home_team_color, away_team: away_team_color})
-        sns.stripplot(data=df_home_away_append, x="season", y="offense_zscore_final", hue="team", ax=axes[1],
+        sns.stripplot(data=df_cfb_summary_home_away_append, x="season", y="offense_zscore_final", hue="team", ax=axes[1],
                       palette={home_team: home_team_color, away_team: away_team_color})
-        sns.stripplot(data=df_home_away_append, x="season", y="defense_zscore_final", hue="team", ax=axes[2],
+        sns.stripplot(data=df_cfb_summary_home_away_append, x="season", y="defense_zscore_final", hue="team", ax=axes[2],
                       palette={home_team: home_team_color, away_team: away_team_color})
         fig_matchup_total_zscores_high_level.tight_layout()
+        list_figures.append(fig_matchup_total_zscores_high_level)
 
-        #Add all figures to a list for printing
-        list_figures = [fig_matchup_team_points, fig_matchup_result_of_the_spread, fig_matchup_total_zscores_high_level, fig_matchup_defense_success_by_game, fig_combined_passing]
+        fig_matchup_defense_success = sns.lmplot(data=df_home_away_append, x="week", y="defense.successRate",
+                                                        hue="team", height=4, aspect=1, col="season",
+                                                        palette={home_team: home_team_color, away_team: away_team_color})
+        fig_matchup_defense_success.set_xticklabels(rotation=65, horizontalalignment='right')
+        list_figures.append(fig_matchup_defense_success)
+
+        fig_matchup_defense_plays = sns.lmplot(data=df_home_away_append, x="week", y="defense.plays",
+                                                 hue="team", height=4, aspect=1, col="season",
+                                                 palette={home_team: home_team_color, away_team: away_team_color})
+        fig_matchup_defense_plays.set_xticklabels(rotation=65, horizontalalignment='right')
+        list_figures.append(fig_matchup_defense_plays)
+
+        fig_matchup_defense_passing_success = sns.lmplot(data=df_home_away_append, x="week", y="defense.passingPlays.successRate",
+                                                 hue="team", height=4, aspect=1, col="season",
+                                                 palette={home_team: home_team_color, away_team: away_team_color})
+        fig_matchup_defense_passing_success.set_xticklabels(rotation=65, horizontalalignment='right')
+        list_figures.append(fig_matchup_defense_passing_success)
+
+        fig_matchup_defense_rushing_success = sns.lmplot(data=df_home_away_append, x="week", y="defense.rushingPlays.successRate",
+                                                 hue="team", height=4, aspect=1, col="season",
+                                                 palette={home_team: home_team_color, away_team: away_team_color})
+        fig_matchup_defense_rushing_success.set_xticklabels(rotation=65, horizontalalignment='right')
+        list_figures.append(fig_matchup_defense_rushing_success)
+
 
         #Output DF's and Figures to Report
         filename_team_report = file_path_cfb_reports_current_year_week + str(matchup) + ".pdf"
