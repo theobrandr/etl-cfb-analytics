@@ -487,6 +487,7 @@ def function_cfb_transform_season_stats():
 def function_cfb_transform_games_and_stats():
     global df_cfb_season_games_all_updated
     global df_cfb_season_games_all
+
     print('Transforming Game Matchups')
     # Clean up Team Info Data
     df_cfb_teaminfo_drop = df_cfb_team_info.dropna(subset=['conference'])
@@ -500,6 +501,7 @@ def function_cfb_transform_games_and_stats():
     cfb_season_games_all_date_col = df_cfb_season_games_all['date']
     df_cfb_season_games_all.drop(labels=['date'], axis=1, inplace=True)
     df_cfb_season_games_all.insert(6, 'date', cfb_season_games_all_date_col)
+    df_cfb_season_games_all["Season + Week"] = df_cfb_season_games_all["season"].astype(str) + "_" + df_cfb_season_games_all["week"].astype(str)
 
     #Split the home v away into 2 df
     df_cfb_season_games_all_home = df_cfb_season_games_all[["id", "Game Matchup", "season", "week", "start_date", "date", "conference_game", "home_team", "home_conference", "home_points"]]
@@ -512,7 +514,14 @@ def function_cfb_transform_games_and_stats():
     #Merge home and away df back together and sort them into order
     df_cfb_season_games_all_append = df_cfb_season_games_all_home.append(df_cfb_season_games_all_away)
     df_cfb_season_games_all_append.sort_values(by=['start_date','id'], inplace=True, ascending=True)
-    df_cfb_season_games_all_updated = df_cfb_season_games_all_append
+
+    #Select Columns from original dataframe cfb_season_games_all to join onto updated dataframe. This will include more home and away info
+    df_cfb_season_games_original_sel_col = df_cfb_season_games_all[['id', 'home_team', 'home_points', 'home_line_scores', 'away_team', 'away_points', 'away_line_scores']]
+    df_cfb_season_games_all_append_and_original_sel_col_joined = pd.merge(df_cfb_season_games_all_append,
+                                                          df_cfb_season_games_original_sel_col,
+                                                          left_on='id', right_on='id', how='left')
+    #Rename the dataframe and fill NA rows
+    df_cfb_season_games_all_updated = df_cfb_season_games_all_append_and_original_sel_col_joined
     df_cfb_season_games_all_updated.fillna(0, inplace=True)
     df_cfb_season_games_all_updated['points'].astype('int64')
 
@@ -688,46 +697,47 @@ def function_cfb_transform_week():
     df_cfb_date_group_bys['date_script_run'] = date_today
     df_cfb_date_group_bys['date_diff'] = (df_cfb_date_group_bys['date'] - df_cfb_date_group_bys['date_script_run']).dt.days
     df_cfb_date_group_bys['current_week_identifier'] = 'Check ETL'
+
     if date_today_day == 'Sunday':
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] == 3),'current_week_identifier'] = 'Current Week'
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 3), 'current_week_identifier'] = 'Future Week'
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < 3), 'current_week_identifier'] = 'Past Week'
-        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
-        current_week = df_cfb_date_current_week['week'].to_string(index=False)
-    elif date_today_day == 'Monday':
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] == 2),'current_week_identifier'] = 'Current Week'
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 2), 'current_week_identifier'] = 'Future Week'
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < 2), 'current_week_identifier'] = 'Past Week'
-        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
-        current_week = df_cfb_date_current_week['week'].to_string(index=False)
-    elif date_today_day == 'Tuesday':
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] == 1),'current_week_identifier'] = 'Current Week'
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 1), 'current_week_identifier'] = 'Future Week'
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < 1), 'current_week_identifier'] = 'Past Week'
-        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
-        current_week = df_cfb_date_current_week['week'].to_string(index=False)
-    elif date_today_day == 'Wednesday':
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] == 0),'current_week_identifier'] = 'Current Week'
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 0), 'current_week_identifier'] = 'Future Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > -1) & (df_cfb_date_group_bys['date_diff'] <= 6),'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 6), 'current_week_identifier'] = 'Future Week'
         df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < 0), 'current_week_identifier'] = 'Past Week'
         df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
         current_week = df_cfb_date_current_week['week'].to_string(index=False)
-    elif date_today_day == 'Thursday':
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] == 1),'current_week_identifier'] = 'Current Week'
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 1), 'current_week_identifier'] = 'Future Week'
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < 1), 'current_week_identifier'] = 'Past Week'
-        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
-        current_week = df_cfb_date_current_week['week'].to_string(index=False)
-    elif date_today_day == 'Friday':
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] >= -2),'current_week_identifier'] = 'Current Week'
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > -2), 'current_week_identifier'] = 'Future Week'
+    elif date_today_day == 'Monday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > -2) & (df_cfb_date_group_bys['date_diff'] <= 5),'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 5), 'current_week_identifier'] = 'Future Week'
         df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < -2), 'current_week_identifier'] = 'Past Week'
         df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
         current_week = df_cfb_date_current_week['week'].to_string(index=False)
-    elif date_today_day == 'Saturday':
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] == -3), 'current_week_identifier'] = 'Current Week'
-        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > -3), 'current_week_identifier'] = 'Future Week'
+    elif date_today_day == 'Tuesday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > -1) & (df_cfb_date_group_bys['date_diff'] <= 4),'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 4), 'current_week_identifier'] = 'Future Week'
         df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < -3), 'current_week_identifier'] = 'Past Week'
+        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
+        current_week = df_cfb_date_current_week['week'].to_string(index=False)
+    elif date_today_day == 'Wednesday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > -2) & (df_cfb_date_group_bys['date_diff'] <= 3),'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 3), 'current_week_identifier'] = 'Future Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < -2), 'current_week_identifier'] = 'Past Week'
+        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
+        current_week = df_cfb_date_current_week['week'].to_string(index=False)
+    elif date_today_day == 'Thursday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > -3) & (df_cfb_date_group_bys['date_diff'] <= 2),'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 2), 'current_week_identifier'] = 'Future Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < -3), 'current_week_identifier'] = 'Past Week'
+        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
+        current_week = df_cfb_date_current_week['week'].to_string(index=False)
+    elif date_today_day == 'Friday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > -4) & (df_cfb_date_group_bys['date_diff'] <= 1),'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 1), 'current_week_identifier'] = 'Future Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < -4), 'current_week_identifier'] = 'Past Week'
+        df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
+        current_week = df_cfb_date_current_week['week'].to_string(index=False)
+    elif date_today_day == 'Saturday':
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > -5) & (df_cfb_date_group_bys['date_diff'] <= 0), 'current_week_identifier'] = 'Current Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] > 0), 'current_week_identifier'] = 'Future Week'
+        df_cfb_date_group_bys.loc[(df_cfb_date_group_bys['date_diff'] < -5), 'current_week_identifier'] = 'Past Week'
         df_cfb_date_current_week = df_cfb_date_group_bys.loc[df_cfb_date_group_bys['current_week_identifier'].astype(str).str.contains('Current Week', regex=False, case=False, na=False)]
         current_week = df_cfb_date_current_week['week'].to_string(index=False)
 def function_cfb_transform_summary_data():
@@ -845,6 +855,7 @@ def function_cfb_transform_data_for_load():
             df_cfb_season_games_all_updated_join_odds[col].fillna("No Data", inplace=True)
 
     #CFB Games/Matchups by Season and Week
+    df_cfb_season_games_all['season'] = df_cfb_season_games_all['season'].astype(str)
     cfb_season_week_matchups = df_cfb_season_games_all
     cfb_season_week_matchups_home_updated = df_cfb_season_games_all_updated
 
@@ -873,6 +884,7 @@ def function_cfb_transform_data_for_load():
     cfb_summary = cfb_summary_join_record_rank_agg_zscores_epa_sorted
 
     #CFB All Data
+    df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'] = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'].astype(str)
     cfb_all_data = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame
 def function_cfb_reporting_current_week():
     print('Generating Reports for current week of the year')
@@ -883,25 +895,28 @@ def function_cfb_reporting_current_week():
         home_team = row['home_team']
         away_team = row['away_team']
         matchup = row['Game Matchup']
-        df_home_team = cfb_all_data.loc[cfb_all_data['team'] == home_team]
-        df_away_team = cfb_all_data.loc[cfb_all_data['team'] == away_team]
+        df_home_team_all_data = cfb_all_data.loc[cfb_all_data['team'] == home_team]
+        df_away_team_all_data = cfb_all_data.loc[cfb_all_data['team'] == away_team]
         home_team_color = cfb_team_info.loc[cfb_team_info['team'] == home_team, 'color'].iloc[0]
         away_team_color = cfb_team_info.loc[cfb_team_info['team'] == away_team, 'color'].iloc[0]
-        df_home_away_append = pd.concat([df_home_team, df_away_team], ignore_index=True)
+
+        df_matchup_home_away_all_data = pd.concat([df_home_team_all_data, df_away_team_all_data], ignore_index=True)
+        df_matchup_home_away_all_data_current_season = df_matchup_home_away_all_data.loc[
+            df_matchup_home_away_all_data['season'].astype(str).str.contains(str(current_year), regex=False, case=False, na=False)]
 
         df_cfb_summary_home_team = cfb_summary.loc[cfb_summary['team'] == (home_team)]
         df_cfb_summary_away_team = cfb_summary.loc[cfb_summary['team'] == (away_team)]
         df_cfb_summary_home_away_append = pd.concat([df_cfb_summary_home_team, df_cfb_summary_away_team], ignore_index=True)
 
         #Create DF and figure for Matchup Summary
-        df_home_away_append_sel_col = df_home_away_append[['Game Matchup', 'season', 'week', 'start_date', 'conference_game',
+        df_matchup_home_away_all_data_sel_col = df_matchup_home_away_all_data[['Game Matchup', 'season', 'week', 'start_date', 'conference_game',
                                                            'AP Top 25','team']]
-        df_matchup_summary = df_home_away_append_sel_col.loc[
-            df_home_away_append_sel_col['season'].astype(str).str.contains(str(current_year), regex=False, case=False,na=False)].loc[
-            df_home_away_append_sel_col['week'].astype(str).str.contains(str(current_week), regex=False, case=False, na=False)]
+        df_matchup_summary = df_matchup_home_away_all_data_sel_col.loc[
+            df_matchup_home_away_all_data_sel_col['season'].astype(str).str.contains(str(current_year), regex=False, case=False,na=False)].loc[
+            df_matchup_home_away_all_data_sel_col['week'].astype(str).str.contains(str(current_week), regex=False, case=False, na=False)]
 
-        fig_df_matchup_summary = plt.figure(figsize=(9, 2))
-        ax1 = fig_df_matchup_summary.add_subplot(211)
+        fig_df_matchup_summary = plt.figure(figsize=(10, 5))
+        ax1 = fig_df_matchup_summary.add_subplot(311)
         ax1.axis('off')
         ax1.table(cellText=df_matchup_summary.values, colLabels=df_matchup_summary.columns)
 
@@ -914,68 +929,102 @@ def function_cfb_reporting_current_week():
             df_cfb_summary_home_away_append_sel_col['season'].astype(str).str.contains(str(current_year),
                                                                                        regex=False, case=False,na=False)]
 
-        ax2 = fig_df_matchup_summary.add_subplot(212)
+        ax2 = fig_df_matchup_summary.add_subplot(312)
         ax2.axis('off')
         ax2.table(cellText=df_cfb_summary_matchup_additional_info.values, colLabels=df_cfb_summary_matchup_additional_info.columns)
 
+        #Create DF and figure table for current year matchups
+        df_matchup_home_away_all_data_current_season_sel_col = df_matchup_home_away_all_data_current_season[[
+            'team','season','week', 'conference_game', 'home_vs_away', 'points', 'home_team', 'home_points', 'home_line_scores', 'away_team', 'away_points', 'away_line_scores']]
+
+        ax3 = fig_df_matchup_summary.add_subplot(313)
+        ax3.axis('off')
+        ax3.table(cellText=df_matchup_home_away_all_data_current_season_sel_col.values,
+                  colLabels=df_matchup_home_away_all_data_current_season_sel_col.columns)
 
         #Create figures for report
         list_figures = []
-        fig_matchup_team_points = sns.catplot(data=df_home_away_append, x="week", y="points",
+        fig_matchup_team_points = sns.catplot(data=df_matchup_home_away_all_data, x="week", y="points",
                                               col="season", kind='bar', hue="team",
                                               height=4, aspect=1,
                                               palette={home_team:home_team_color, away_team:away_team_color})
         list_figures.append(fig_matchup_team_points)
 
-        fig_matchup_result_of_the_spread = sns.catplot(data=df_home_away_append, x="result_of_the_spread",
+        fig_matchup_result_of_the_spread = sns.catplot(data=df_matchup_home_away_all_data, x="result_of_the_spread",
                                                        kind="count", col="season", hue="team",
                                                        height=4, aspect=1,
                                                        palette={home_team:home_team_color, away_team:away_team_color})
         fig_matchup_result_of_the_spread.set_xticklabels(rotation=65, horizontalalignment='right')
         list_figures.append(fig_matchup_result_of_the_spread)
 
-        fig_combined_passing, axes = plt.subplots(1, 2, sharex=True,
-                                    figsize=(10, 5))
-        sns.stripplot(data=df_home_away_append, x="season", y="offense_netPassingYards", hue="team", ax=axes[0],
-                    palette={home_team: home_team_color, away_team: away_team_color})
-        sns.stripplot(data=df_home_away_append, x="season", y="offense_passCompletion_Conversions_percent", hue="team",
-                    ax=axes[1], palette={home_team: home_team_color, away_team: away_team_color})
+        fig_combined_passing, axes = plt.subplots(1, 2)
+        sns.set_style("whitegrid", {'grid.linestyle': '--'})
+        sns.set(rc={"figure.figsize": (8, 4)})
+        sns.lineplot(data=df_matchup_home_away_all_data, x="season", y="offense_netPassingYards", hue="team",
+                    palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[0], marker="o")
+        sns.lineplot(data=df_matchup_home_away_all_data, x="season", y="offense_passCompletion_Conversions_percent", hue="team",
+                    palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[1], marker="o")
         fig_combined_passing.tight_layout()
         list_figures.append(fig_combined_passing)
 
-        fig_matchup_total_zscores_high_level, axes = plt.subplots(1, 3, sharex=True, figsize=(8, 4))
-        sns.stripplot(data=df_cfb_summary_home_away_append, x="season", y="total_zscore", hue="team", ax=axes[0],
-                      palette={home_team: home_team_color, away_team: away_team_color})
-        sns.stripplot(data=df_cfb_summary_home_away_append, x="season", y="offense_zscore_final", hue="team", ax=axes[1],
-                      palette={home_team: home_team_color, away_team: away_team_color})
-        sns.stripplot(data=df_cfb_summary_home_away_append, x="season", y="defense_zscore_final", hue="team", ax=axes[2],
-                      palette={home_team: home_team_color, away_team: away_team_color})
-        fig_matchup_total_zscores_high_level.tight_layout()
-        list_figures.append(fig_matchup_total_zscores_high_level)
+        fig_matchup_defense_success_rush_pass, axes = plt.subplots(1, 2)
+        sns.set_style("whitegrid", {'grid.linestyle': '--'})
+        sns.set(rc={"figure.figsize": (8, 4)})
+        sns.lineplot(data=df_matchup_home_away_all_data_current_season, x="week", y="defense.passingPlays.successRate",
+                     hue="team", palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[0], marker="o")
+        axes[0].set(xticks=df_matchup_home_away_all_data_current_season['week'])
+        sns.lineplot(data=df_matchup_home_away_all_data_current_season, x="week", y="defense.rushingPlays.successRate",
+                     hue="team", palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[1], marker="o")
+        axes[1].set(xticks=df_matchup_home_away_all_data_current_season['week'])
+        fig_matchup_defense_success_rush_pass.tight_layout()
+        list_figures.append(fig_matchup_defense_success_rush_pass)
 
-        fig_matchup_defense_success = sns.lmplot(data=df_home_away_append, x="week", y="defense.successRate",
-                                                        hue="team", height=4, aspect=1, col="season",
-                                                        palette={home_team: home_team_color, away_team: away_team_color})
-        fig_matchup_defense_success.set_xticklabels(rotation=65, horizontalalignment='right')
+        fig_matchup_defense_success, axes = plt.subplots(1, 2)
+        sns.set_style("whitegrid", {'grid.linestyle': '--'})
+        sns.set(rc={"figure.figsize": (8, 4)})
+        sns.lineplot(data=df_matchup_home_away_all_data_current_season, x="week",
+                        y="defense.successRate",
+                        hue="team", palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[0], marker="o")
+        axes[0].set(xticks=df_matchup_home_away_all_data_current_season['week'])
+        sns.lineplot(data=df_matchup_home_away_all_data_current_season, x="week",
+                        y="defense.plays",
+                        hue="team", palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[1], marker="o")
+        axes[1].set(xticks=df_matchup_home_away_all_data_current_season['week'])
+        fig_matchup_defense_success.tight_layout()
         list_figures.append(fig_matchup_defense_success)
 
-        fig_matchup_defense_plays = sns.lmplot(data=df_home_away_append, x="week", y="defense.plays",
-                                                 hue="team", height=4, aspect=1, col="season",
-                                                 palette={home_team: home_team_color, away_team: away_team_color})
-        fig_matchup_defense_plays.set_xticklabels(rotation=65, horizontalalignment='right')
-        list_figures.append(fig_matchup_defense_plays)
+        fig_matchup_offense_defense_zscores, axes = plt.subplots(1, 2)
+        sns.set_style("whitegrid", {'grid.linestyle': '--'})
+        sns.set(rc={"figure.figsize": (8, 4)})
+        sns.lineplot(data=df_cfb_summary_home_away_append, x="season", y="offense_zscore_final", hue="team",
+                      palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[0], marker="o")
+        sns.lineplot(data=df_cfb_summary_home_away_append, x="season", y="defense_zscore_final", hue="team",
+                      palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[1], marker="o")
+        fig_matchup_offense_defense_zscores.tight_layout()
+        list_figures.append(fig_matchup_offense_defense_zscores)
 
-        fig_matchup_defense_passing_success = sns.lmplot(data=df_home_away_append, x="week", y="defense.passingPlays.successRate",
-                                                 hue="team", height=4, aspect=1, col="season",
-                                                 palette={home_team: home_team_color, away_team: away_team_color})
-        fig_matchup_defense_passing_success.set_xticklabels(rotation=65, horizontalalignment='right')
-        list_figures.append(fig_matchup_defense_passing_success)
+        fig_matchup_special_teams_total_zscores, axes = plt.subplots(1, 2)
+        sns.set_style("whitegrid", {'grid.linestyle': '--'})
+        sns.set(rc={"figure.figsize": (8, 4)})
+        sns.lineplot(data=df_cfb_summary_home_away_append, x="season", y="specialteams_zscore_final", hue="team",
+                      palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[0], marker="o")
+        sns.lineplot(data=df_cfb_summary_home_away_append, x="season", y="total_zscore", hue="team",
+                     palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[1], marker="o")
+        fig_matchup_special_teams_total_zscores.tight_layout()
+        list_figures.append(fig_matchup_special_teams_total_zscores)
 
-        fig_matchup_defense_rushing_success = sns.lmplot(data=df_home_away_append, x="week", y="defense.rushingPlays.successRate",
-                                                 hue="team", height=4, aspect=1, col="season",
-                                                 palette={home_team: home_team_color, away_team: away_team_color})
-        fig_matchup_defense_rushing_success.set_xticklabels(rotation=65, horizontalalignment='right')
-        list_figures.append(fig_matchup_defense_rushing_success)
+        fig_matchup_epa_offense_defense, axes = plt.subplots(1, 2)
+        sns.set_style("whitegrid", {'grid.linestyle': '--'})
+        sns.set(rc={"figure.figsize": (10, 4)})
+        sns.lineplot(data=df_matchup_home_away_all_data_current_season, x="week", y="offense.ppa",
+                     hue="team", palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[0], marker="o")
+        axes[0].set(xticks=df_matchup_home_away_all_data_current_season['week'])
+        sns.lineplot(data=df_matchup_home_away_all_data_current_season, x="week", y="defense.ppa",
+                     hue="team", palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[1], marker="o")
+        axes[1].set(xticks=df_matchup_home_away_all_data_current_season['week'])
+        fig_matchup_epa_offense_defense.tight_layout()
+
+        list_figures.append(fig_matchup_epa_offense_defense)
 
 
         #Output DF's and Figures to Report
@@ -1004,8 +1053,8 @@ def funtion_cfb_load_to_excel():
 function_cfb_pregame_filepath_check()
 function_cfb_pregame_api_check()
 function_cfb_pregame_api_pull_previous_years_check()
-function_cfb_extract_current_year_api_pull()
-function_cfb_extract_team_info_api_pull()
+#function_cfb_extract_current_year_api_pull()
+#function_cfb_extract_team_info_api_pull()
 function_cfb_extract_json_to_df()
 function_cfb_transform_season_stats()
 function_cfb_transform_games_and_stats()
