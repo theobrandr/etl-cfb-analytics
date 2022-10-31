@@ -888,9 +888,12 @@ def function_cfb_transform_data_for_load():
     cfb_all_data = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame
 def function_cfb_reporting_current_week():
     print('Generating Reports for current week of the year')
+    file_path_cfb_reports_current_year_week = file_path_cfb_reports_current_year + 'Week_' + str(current_week) + '/'
+
     df_cfb_for_reporting_game_matchup = cfb_season_week_matchups.loc[cfb_season_week_matchups['season'].astype(str).str.contains(str(current_year), regex=False, case=False, na=False)]
     df_cfb_for_reporting_game_matchup_current_week = df_cfb_for_reporting_game_matchup.loc[df_cfb_for_reporting_game_matchup['week'].astype(str).str.contains(str(current_week),regex=False, case=False, na=False)]
-    file_path_cfb_reports_current_year_week = file_path_cfb_reports_current_year + 'Week_' + str(current_week) + '/'
+    cfb_all_data_current_year = cfb_all_data.loc[cfb_all_data['season'].astype(str).str.contains(str(current_year), regex=False, case=False, na=False)]
+
     for index, row in df_cfb_for_reporting_game_matchup_current_week.iterrows():
         home_team = row['home_team']
         away_team = row['away_team']
@@ -908,52 +911,108 @@ def function_cfb_reporting_current_week():
         df_cfb_summary_away_team = cfb_summary.loc[cfb_summary['team'] == (away_team)]
         df_cfb_summary_home_away_append = pd.concat([df_cfb_summary_home_team, df_cfb_summary_away_team], ignore_index=True)
 
-        #Create DF and figure for Matchup Summary
+        df_cfb_season_stats_by_season_home_team = cfb_season_stats_by_season.loc[cfb_season_stats_by_season['team'] == (home_team)]
+        df_cfb_season_stats_by_season_away_team = cfb_season_stats_by_season.loc[cfb_season_stats_by_season['team'] == (away_team)]
+        df_cfb_season_stats_by_season_home_away_append = pd.concat([df_cfb_season_stats_by_season_home_team, df_cfb_season_stats_by_season_away_team], ignore_index=True)
+        df_cfb_season_stats_by_season_home_away_append.sort_values(by=['season','team'], inplace=True, ascending=False)
+
+        #Create DF or Matchup Summary
         df_matchup_home_away_all_data_sel_col = df_matchup_home_away_all_data[['Game Matchup', 'season', 'week', 'start_date', 'conference_game',
                                                            'AP Top 25','team']]
         df_matchup_summary = df_matchup_home_away_all_data_sel_col.loc[
             df_matchup_home_away_all_data_sel_col['season'].astype(str).str.contains(str(current_year), regex=False, case=False,na=False)].loc[
             df_matchup_home_away_all_data_sel_col['week'].astype(str).str.contains(str(current_week), regex=False, case=False, na=False)]
 
-        fig_df_matchup_summary = plt.figure(figsize=(10, 5))
-        ax1 = fig_df_matchup_summary.add_subplot(311)
-        ax1.axis('off')
-        ax1.table(cellText=df_matchup_summary.values, colLabels=df_matchup_summary.columns)
+        #Create DF for Matchup Summary Current Season Table
+        df_matchup_home_away_all_data_current_season_sel_col = df_matchup_home_away_all_data_current_season[[
+            'team', 'season', 'week', 'conference_game', 'home_vs_away', 'points', 'home_team', 'home_points',
+            'home_line_scores', 'away_team', 'away_points', 'away_line_scores']]
 
-        #Create DF and figure for additional Matchup Info
+        #Create DF additional Matchup Summary High Level Stats Info
         df_cfb_summary_home_away_append_sel_col = df_cfb_summary_home_away_append[['season', 'team', 'total.wins', 'total.losses',
                                                            'home_points_season_mean', 'away_points_season_mean',
                                                            'epa_per_game_offense_overall_avg_per_season',
                                                            'epa_per_game_offense_overall_avg_per_season']]
         df_cfb_summary_matchup_additional_info = df_cfb_summary_home_away_append_sel_col.loc[
-            df_cfb_summary_home_away_append_sel_col['season'].astype(str).str.contains(str(current_year),
-                                                                                       regex=False, case=False,na=False)]
+            df_cfb_summary_home_away_append_sel_col['season'].astype(str).str.contains(str(current_year), regex=False, case=False,na=False)]
 
-        ax2 = fig_df_matchup_summary.add_subplot(312)
-        ax2.axis('off')
-        ax2.table(cellText=df_cfb_summary_matchup_additional_info.values, colLabels=df_cfb_summary_matchup_additional_info.columns)
+        #Create figure for Matchup Summary Tables
+        fig_df_matchup_summary = plt.figure("fig_matchup_summary", figsize=(10, 5))
+        fig_df_matchup_summary.ax1 = fig_df_matchup_summary.add_subplot(311)
+        fig_df_matchup_summary.ax1.axis('off')
+        fig_df_matchup_summary.ax1.table(cellText=df_matchup_summary.values, colLabels=df_matchup_summary.columns)
 
-        #Create DF and figure table for current year matchups
-        df_matchup_home_away_all_data_current_season_sel_col = df_matchup_home_away_all_data_current_season[[
-            'team','season','week', 'conference_game', 'home_vs_away', 'points', 'home_team', 'home_points', 'home_line_scores', 'away_team', 'away_points', 'away_line_scores']]
+        fig_df_matchup_summary.ax2 = fig_df_matchup_summary.add_subplot(312)
+        fig_df_matchup_summary.ax2.axis('off')
+        fig_df_matchup_summary.ax2.table(cellText=df_cfb_summary_matchup_additional_info.values, colLabels=df_cfb_summary_matchup_additional_info.columns)
 
-        ax3 = fig_df_matchup_summary.add_subplot(313)
-        ax3.axis('off')
-        ax3.table(cellText=df_matchup_home_away_all_data_current_season_sel_col.values,
+        fig_df_matchup_summary.ax3 = fig_df_matchup_summary.add_subplot(313)
+        fig_df_matchup_summary.ax3.axis('off')
+        fig_df_matchup_summary.ax3.table(cellText=df_matchup_home_away_all_data_current_season_sel_col.values,
                   colLabels=df_matchup_home_away_all_data_current_season_sel_col.columns)
+
+        #Create DF and figure for Season Stats Table
+        df_matchup_season_stats_offense = df_cfb_season_stats_by_season_home_away_append[
+            ['team', 'season', 'offense_possessionTime','offense_totalYards','offense_netPassingYards',
+             'offense_passAttempts','offense_passCompletions','offense_passingTDs','offense_rushingYards',
+             'offense_rushingAttempts','offense_rushingTDs','offense_turnovers','offense_fumblesLost','offense_passesIntercepted']]
+        df_matchup_season_stats_offense_current_year = df_matchup_season_stats_offense.loc[
+            df_matchup_season_stats_offense['season'].astype(str).str.contains(str(current_year), regex=False,case=False, na=False)]
+
+        df_matchup_season_stats_offense_downs_and_turnovers = df_cfb_season_stats_by_season_home_away_append[
+            ['team', 'season', 'offense_firstDowns','offense_thirdDowns','offense_thirdDownConversions',
+             'offense_fourthDowns','offense_fourthDownConversions','offense_turnovers',
+             'offense_fumblesLost','offense_passesIntercepted']]
+        df_matchup_season_stats_offense_downs_and_turnovers_current_year = df_matchup_season_stats_offense_downs_and_turnovers.loc[
+            df_matchup_season_stats_offense_downs_and_turnovers['season'].astype(str).str.contains(str(current_year), regex=False, case=False, na=False)]
+
+        df_matchup_season_stats_defense = df_cfb_season_stats_by_season_home_away_append[
+            ['team', 'season', 'defense_tacklesForLoss','defense_sacks','defense_fumblesRecovered',
+             'defense_interceptions','defense_interceptionTDs']]
+        df_matchup_season_stats_defense_current_year = df_matchup_season_stats_defense.loc[
+            df_matchup_season_stats_defense['season'].astype(str).str.contains(str(current_year), regex=False, case=False, na=False)]
+
+        df_matchup_season_stats_special_teams = df_cfb_season_stats_by_season_home_away_append[
+            ['team', 'season', 'specialteams_kickReturns','specialteams_kickReturnYards','specialteams_kickReturnTDs',
+             'specialteams_puntReturnYards','specialteams_puntReturns','specialteams_puntReturnTDs']]
+        df_matchup_season_stats_special_teams_current_year = df_matchup_season_stats_special_teams.loc[
+            df_matchup_season_stats_special_teams['season'].astype(str).str.contains(str(current_year), regex=False, case=False, na=False)]
+
+        #Create Figure for Matchup Season Stats Offense
+        fig_df_matchup_season_stats_offense = plt.figure("fig_matchup_season_stats", figsize=(10, 5))
+        ax1 = fig_df_matchup_season_stats_offense.add_subplot(211)
+        ax1 = plt.table(cellText=df_matchup_season_stats_offense.values,colLabels=df_matchup_season_stats_offense.columns)
+        ax1 = plt.axis('off')
+
+        ax2 = fig_df_matchup_season_stats_offense.add_subplot(212)
+        ax2 = plt.table(cellText=df_matchup_season_stats_offense_downs_and_turnovers.values,colLabels=df_matchup_season_stats_offense_downs_and_turnovers.columns)
+        ax2 = plt.axis('off')
+
+        #Create Figure for Matchup Season Stats Defense and Special Teams
+        fig_df_matchup_season_stats_defense_special_teams = plt.figure("fig_matchup_season_stats_defense_special_teams", figsize=(10, 5))
+        ax1 = fig_df_matchup_season_stats_defense_special_teams.add_subplot(211)
+        ax1 = plt.table(cellText=df_matchup_season_stats_defense.values,colLabels=df_matchup_season_stats_defense.columns)
+        ax1 = plt.axis('off')
+
+        ax2 = fig_df_matchup_season_stats_defense_special_teams.add_subplot(212)
+        ax2 = plt.table(cellText=df_matchup_season_stats_special_teams.values,colLabels=df_matchup_season_stats_special_teams.columns)
+        ax2 = plt.axis('off')
 
         #Create figures for report
         list_figures = []
+
         fig_matchup_team_points = sns.catplot(data=df_matchup_home_away_all_data, x="week", y="points",
                                               col="season", kind='bar', hue="team",
                                               height=4, aspect=1,
                                               palette={home_team:home_team_color, away_team:away_team_color})
+        sns.set_style("whitegrid", {'grid.linestyle': '--'})
         list_figures.append(fig_matchup_team_points)
 
         fig_matchup_result_of_the_spread = sns.catplot(data=df_matchup_home_away_all_data, x="result_of_the_spread",
                                                        kind="count", col="season", hue="team",
                                                        height=4, aspect=1,
                                                        palette={home_team:home_team_color, away_team:away_team_color})
+        sns.set_style("whitegrid", {'grid.linestyle': '--'})
         fig_matchup_result_of_the_spread.set_xticklabels(rotation=65, horizontalalignment='right')
         list_figures.append(fig_matchup_result_of_the_spread)
 
@@ -1023,9 +1082,27 @@ def function_cfb_reporting_current_week():
                      hue="team", palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[1], marker="o")
         axes[1].set(xticks=df_matchup_home_away_all_data_current_season['week'])
         fig_matchup_epa_offense_defense.tight_layout()
-
         list_figures.append(fig_matchup_epa_offense_defense)
-
+        '''
+        fig_matchup_zscore_four, axes = plt.subplots(2, 2)
+        sns.set_style("whitegrid", {'grid.linestyle': '--'})
+        sns.set(rc={"figure.figsize": (10, 4)})
+        sns.lineplot(data=df_cfb_summary_home_away_append, x="season", y="offense_zscore_final", hue="team",
+                     palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[0], marker="o")
+        sns.lineplot(data=df_cfb_summary_home_away_append, x="season", y="defense_zscore_final", hue="team",
+                     palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[1], marker="o")
+        sns.lineplot(data=df_cfb_summary_home_away_append, x="season", y="specialteams_zscore_final", hue="team",
+                     palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[2], marker="o")
+        sns.lineplot(data=df_cfb_summary_home_away_append, x="season", y="total_zscore", hue="team",
+                     palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[3], marker="o")
+        fig_matchup_zscore_four.tight_layout()
+        list_figures.append(fig_matchup_zscore_four)
+        
+        fig_matchup_hist_all_teams_offense_totalYards = sns.histplot(data=cfb_all_data_current_year,
+                                                                     x="season", y="offense_totalYards")
+        sns.set_style("whitegrid", {'grid.linestyle': '--'})
+        list_figures.append(fig_matchup_hist_all_teams_offense_totalYards)
+        '''
 
         #Output DF's and Figures to Report
         filename_team_report = file_path_cfb_reports_current_year_week + str(matchup) + ".pdf"
@@ -1033,6 +1110,8 @@ def function_cfb_reporting_current_week():
         pp.savefig(fig_df_matchup_summary, bbox_inches='tight')
         for fig in list_figures:
             fig.savefig(pp, format='pdf')
+        pp.savefig(fig_df_matchup_season_stats_offense, bbox_inches='tight')
+        pp.savefig(fig_df_matchup_season_stats_defense_special_teams, bbox_inches='tight')
         pp.close()
         plt.close('all')
         print('Report Generated for ' + str(matchup))
@@ -1053,8 +1132,8 @@ def funtion_cfb_load_to_excel():
 function_cfb_pregame_filepath_check()
 function_cfb_pregame_api_check()
 function_cfb_pregame_api_pull_previous_years_check()
-function_cfb_extract_current_year_api_pull()
-function_cfb_extract_team_info_api_pull()
+#function_cfb_extract_current_year_api_pull()
+#function_cfb_extract_team_info_api_pull()
 function_cfb_extract_json_to_df()
 function_cfb_transform_season_stats()
 function_cfb_transform_games_and_stats()
