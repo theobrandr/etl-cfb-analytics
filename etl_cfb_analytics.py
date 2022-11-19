@@ -420,25 +420,25 @@ def function_cfb_transform_season_stats():
         df_cfb_season_stats_all_for_loop['offense_firstDowns_zscore'] = (df_cfb_season_stats_all_for_loop['offense_firstDowns'] - df_cfb_season_stats_all_for_loop['offense_firstDowns'].mean()) / df_cfb_season_stats_all_for_loop['offense_firstDowns'].std()
         #Fourth Downs
         df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_zscore'] = (df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'] - df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'].mean()) / df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'].std()
-        df_cfb_season_stats_all_for_loop['offense_fourthDowns_zscore'] = (df_cfb_season_stats_all_for_loop['offense_fourthDowns'] - df_cfb_season_stats_all_for_loop['offense_fourthDowns'].mean()) / df_cfb_season_stats_all_for_loop['offense_fourthDowns'].std()
+        #df_cfb_season_stats_all_for_loop['offense_fourthDowns_zscore'] = (df_cfb_season_stats_all_for_loop['offense_fourthDowns'] - df_cfb_season_stats_all_for_loop['offense_fourthDowns'].mean()) / df_cfb_season_stats_all_for_loop['offense_fourthDowns'].std()
         #Calculate Actual Fourth Down Completion Percentage
         #df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'] = (df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'] / df_cfb_season_stats_all_for_loop['offense_fourthDowns'])
         #df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent_zscore'] = (df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'] - df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'].mean()) / df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'].std()
         #Pass Attempts and Completions
-        df_cfb_season_stats_all_for_loop['offense_passAttempts_zscore'] = (df_cfb_season_stats_all_for_loop['offense_passAttempts'] - df_cfb_season_stats_all_for_loop['offense_passAttempts'].mean()) / df_cfb_season_stats_all_for_loop['offense_passAttempts'].std()
+        #df_cfb_season_stats_all_for_loop['offense_passAttempts_zscore'] = (df_cfb_season_stats_all_for_loop['offense_passAttempts'] - df_cfb_season_stats_all_for_loop['offense_passAttempts'].mean()) / df_cfb_season_stats_all_for_loop['offense_passAttempts'].std()
         df_cfb_season_stats_all_for_loop['offense_passCompletions_zscore'] = (df_cfb_season_stats_all_for_loop['offense_passCompletions'] - df_cfb_season_stats_all_for_loop['offense_passCompletions'].mean()) / df_cfb_season_stats_all_for_loop['offense_passCompletions'].std()
         #Calculate Actual Pass Completion Percentage
         df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'] = (df_cfb_season_stats_all_for_loop['offense_passCompletions'] / df_cfb_season_stats_all_for_loop['offense_passAttempts'])
         df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent_zscore'] = (df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'] - df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'].mean()) / df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'].std()
         #Rushing Attempts and Total Yards
-        df_cfb_season_stats_all_for_loop['offense_rushingAttempts_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingAttempts'] - df_cfb_season_stats_all_for_loop['offense_rushingAttempts'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingAttempts'].std()
+        #df_cfb_season_stats_all_for_loop['offense_rushingAttempts_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingAttempts'] - df_cfb_season_stats_all_for_loop['offense_rushingAttempts'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingAttempts'].std()
         df_cfb_season_stats_all_for_loop['offense_rushingYards_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingYards'] - df_cfb_season_stats_all_for_loop['offense_rushingYards'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingYards'].std()
         #Calculate Average Rushing Yards
         df_cfb_season_stats_all_for_loop['offense_rushingYards_average'] = (df_cfb_season_stats_all_for_loop['offense_rushingYards'] / df_cfb_season_stats_all_for_loop['offense_rushingAttempts'])
         df_cfb_season_stats_all_for_loop['offense_rushingYards_average_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingYards_average'] - df_cfb_season_stats_all_for_loop['offense_rushingYards_average'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingYards_average'].std()
         #Third Downs and Third Down conversions
         df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_zscore'] = (df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'] - df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'].mean()) / df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'].std()
-        df_cfb_season_stats_all_for_loop['offense_thirdDowns_zscore'] = (df_cfb_season_stats_all_for_loop['offense_thirdDowns'] - df_cfb_season_stats_all_for_loop['offense_thirdDowns'].mean()) / df_cfb_season_stats_all_for_loop['offense_thirdDowns'].std()
+        #df_cfb_season_stats_all_for_loop['offense_thirdDowns_zscore'] = (df_cfb_season_stats_all_for_loop['offense_thirdDowns'] - df_cfb_season_stats_all_for_loop['offense_thirdDowns'].mean()) / df_cfb_season_stats_all_for_loop['offense_thirdDowns'].std()
         #Calculate Actual Third Down Completion Percentage
         #df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'] = (df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'] / df_cfb_season_stats_all_for_loop['offense_thirdDowns'])
         #df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent_zscore'] = (df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'] - df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'].mean()) / df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'].std()
@@ -928,14 +928,6 @@ def function_cfb_reporting_current_week():
             'team', 'season', 'week', 'conference_game', 'home_vs_away', 'points', 'home_team', 'home_points',
             'home_line_scores', 'away_team', 'away_points', 'away_line_scores']]
 
-        #Create DF additional Matchup Summary High Level Stats Info
-        df_cfb_summary_home_away_append_sel_col = df_cfb_summary_home_away_append[['season', 'team', 'total.wins', 'total.losses',
-                                                           'home_points_season_mean', 'away_points_season_mean',
-                                                           'epa_per_game_offense_overall_avg_per_season',
-                                                           'epa_per_game_offense_overall_avg_per_season']].reset_index()
-        df_cfb_summary_matchup_current_year = df_cfb_summary_home_away_append_sel_col.loc[
-            df_cfb_summary_home_away_append_sel_col['season'].astype(str).str.contains(str(current_year), regex=False, case=False,na=False)]
-
         #Create figure for Matchup Summary Tables
         fig_df_matchup_summary = plt.figure("fig_matchup_summary", figsize=(10, 5))
         fig_df_matchup_summary.ax1 = fig_df_matchup_summary.add_subplot(311)
@@ -1096,42 +1088,27 @@ def function_cfb_reporting_current_week():
         axes[1].set(xticks=df_matchup_home_away_all_data_current_season['week'])
         fig_matchup_epa_offense_defense.tight_layout()
         list_figures.append(fig_matchup_epa_offense_defense)
-        '''
+
+
         fig_matchup_epa_offense_defense_per_season, axes = plt.subplots(1, 2)
         sns.set_style("whitegrid", {'grid.linestyle': '--'})
         sns.set(rc={"figure.figsize": (10, 4)})
-        sns.lineplot(data=df_cfb_summary_home_away_append_sel_col, x="season", y="epa_per_game_offense_overall_avg_per_season",
+        sns.lineplot(data=df_matchup_home_away_all_data_current_season, x="week", y="epa_per_game_offense.overall",
                      hue="team", palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[0],
                      marker="o")
-        sns.lineplot(data=df_cfb_summary_home_away_append_sel_col, x="season", y="epa_per_game_defense_overall_avg_per_season",
+        sns.lineplot(data=df_matchup_home_away_all_data_current_season, x="week", y="epa_per_game_defense.overall",
                      hue="team", palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[1],
                      marker="o")
         fig_matchup_epa_offense_defense_per_season.tight_layout()
         list_figures.append(fig_matchup_epa_offense_defense_per_season)
+
         '''
-        '''
-        fig_matchup_all_teams_zscore, axes = plt.subplots(1, 1)
-        sns.set_style("whitegrid", {'grid.linestyle': '--'})
+        fig_matchup_all_teams_zscore = sns.displot(data=cfb_all_data_current_year, x ="offense_zscore_final", hue="team",
+                                                   palette={home_team: home_team_color, away_team: away_team_color, 'team': 'black'})
+
         sns.set(rc={"figure.figsize": (8, 4)})
-        sns.lineplot(data=df_cfb_summary_matchup_current_year, x="team", y="offense_zscore_final", hue="team",
-                     palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[0], marker="o")
-        fig_matchup_all_teams_zscore.tight_layout()
         list_figures.append(fig_matchup_all_teams_zscore)
-        '''
-        '''
-        fig_matchup_zscore_four, axes = plt.subplots(2, 2)
-        sns.set_style("whitegrid", {'grid.linestyle': '--'})
-        sns.set(rc={"figure.figsize": (10, 4)})
-        sns.lineplot(data=df_cfb_summary_home_away_append, x="season", y="offense_zscore_final", hue="team",
-                     palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[0], marker="o")
-        sns.lineplot(data=df_cfb_summary_home_away_append, x="season", y="defense_zscore_final", hue="team",
-                     palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[1], marker="o")
-        sns.lineplot(data=df_cfb_summary_home_away_append, x="season", y="specialteams_zscore_final", hue="team",
-                     palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[2], marker="o")
-        sns.lineplot(data=df_cfb_summary_home_away_append, x="season", y="total_zscore", hue="team",
-                     palette={home_team: home_team_color, away_team: away_team_color}, ax=axes[3], marker="o")
-        fig_matchup_zscore_four.tight_layout()
-        list_figures.append(fig_matchup_zscore_four)
+
         
         fig_matchup_hist_all_teams_offense_totalYards = sns.histplot(data=cfb_all_data_current_year,
                                                                      x="season", y="offense_totalYards")
@@ -1167,8 +1144,8 @@ def funtion_cfb_load_to_excel():
 function_cfb_pregame_filepath_check()
 function_cfb_pregame_api_check()
 function_cfb_pregame_api_pull_previous_years_check()
-#function_cfb_extract_current_year_api_pull()
-#function_cfb_extract_team_info_api_pull()
+function_cfb_extract_current_year_api_pull()
+function_cfb_extract_team_info_api_pull()
 function_cfb_extract_json_to_df()
 function_cfb_transform_season_stats()
 function_cfb_transform_games_and_stats()
