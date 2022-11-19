@@ -475,14 +475,6 @@ def function_cfb_transform_season_stats():
         df_cfb_season_stats_all_for_loop['total_zscore'] = df_cfb_season_stats_all_for_loop['offense_zscore_final'] + df_cfb_season_stats_all_for_loop['defense_zscore_final'] + df_cfb_season_stats_all_for_loop['specialteams_zscore_final']
         list_df_cfb_season_stats_all_for_loop_by_year.append(df_cfb_season_stats_all_for_loop)
     df_cfb_season_stats_all = pd.concat(list_df_cfb_season_stats_all_for_loop_by_year)
-    '''
-    df_cfb_season_stats_all_sel_col = df_cfb_season_stats_all[[
-        'team', 'season', 'games', 'offense_plus_zscore_sum', 'offense_minus_zscore_sum', 'offense_zscore_final',
-        'defense_zscore_final', 'specialteams_zscore_final', 'total_zscore']]
-    df_cfb_season_stats_all_sel_col_sorted = df_cfb_season_stats_all_sel_col.sort_values(by=['team','season'], ascending=True, na_position='first')
-    df_cfb_season_stats_all_sel_col_sorted["games_year"] = df_cfb_season_stats_all_sel_col_sorted[['season', 'games']].astype(str).apply(" : ".join,axis=1)
-    df_cfb_season_stats_all_sel_col_sorted_groupby = df_cfb_season_stats_all_sel_col_sorted.groupby(['team'])['games_year'].agg(", ".join).reset_index()
-    '''
 
 def function_cfb_transform_games_and_stats():
     global df_cfb_season_games_all_updated
@@ -928,6 +920,14 @@ def function_cfb_reporting_current_week():
             'team', 'season', 'week', 'conference_game', 'home_vs_away', 'points', 'home_team', 'home_points',
             'home_line_scores', 'away_team', 'away_points', 'away_line_scores']]
 
+        #Create DF additional Matchup Summary High Level Stats Info
+        df_cfb_summary_home_away_append_sel_col = df_cfb_summary_home_away_append[['season', 'team', 'total.wins', 'total.losses',
+                                                           'home_points_season_mean', 'away_points_season_mean',
+                                                           'epa_per_game_offense_overall_avg_per_season',
+                                                           'epa_per_game_offense_overall_avg_per_season']].reset_index()
+        df_cfb_summary_matchup_current_year = df_cfb_summary_home_away_append_sel_col.loc[
+            df_cfb_summary_home_away_append_sel_col['season'].astype(str).str.contains(str(current_year), regex=False, case=False,na=False)]
+
         #Create figure for Matchup Summary Tables
         fig_df_matchup_summary = plt.figure("fig_matchup_summary", figsize=(10, 5))
         fig_df_matchup_summary.ax1 = fig_df_matchup_summary.add_subplot(311)
@@ -1108,12 +1108,6 @@ def function_cfb_reporting_current_week():
 
         sns.set(rc={"figure.figsize": (8, 4)})
         list_figures.append(fig_matchup_all_teams_zscore)
-
-        
-        fig_matchup_hist_all_teams_offense_totalYards = sns.histplot(data=cfb_all_data_current_year,
-                                                                     x="season", y="offense_totalYards")
-        sns.set_style("whitegrid", {'grid.linestyle': '--'})
-        list_figures.append(fig_matchup_hist_all_teams_offense_totalYards)
         '''
 
         #Output DF's and Figures to Report
