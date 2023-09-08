@@ -106,3 +106,13 @@ def delete_all_tables():
         conn.close()
     else:
         exit()
+
+def argument_check(args):
+    if args.previous_years:
+        print("Pulling data for previous years")
+    if args.report_week is not None:
+        print(f"Reporting week set to {args.report_week}")
+    if args.report_year is not None:
+        print(f"Reporting year set to {args.report_year}")
+    if args.delete_tables:
+        delete_all_tables()

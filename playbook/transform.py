@@ -1,12 +1,24 @@
-import pandas
+import pandas as pd
+import sqlite3
+def sqlite_query_table(table_name):
+    conn = sqlite3.connect('blitzalytics.db')
+    query = f"SELECT * FROM {table_name}"
+    df_table = pd.read_sql_query(query, conn)
+    conn.close()
+    return df_table
 
 def season_stats():
     global df_cfb_season_stats_all
     print('Transforming Season Stats')
+    df_season_stats = sqlite_query_table('season_stats')
+
+    df_season_stats_year_pivot = df_season_stats.pivot(index=['team', 'season'], columns='statName', values='statValue').reset_index()
+
     #Convert list to df with pivot table
     for df_season_stats_year in list_df_cfb_season_stats_pre_pivot:
         list_df_cfb_season_stats_all.append(df_season_stats_year.pivot(index=['team', 'season'], columns='statName', values='statValue').reset_index())
     df_cfb_season_stats_all_original = pd.concat(list_df_cfb_season_stats_all)
+
     df_cfb_season_stats_all_original.rename(columns = lambda col: f"offense_{col}"
                                                     if col in ("possessionTime", "firstDowns", "fourthDownConversions", "fourthDowns", "fumblesLost", "passAttempts",
                                                                "netPassingYards", "passesIntercepted", "passCompletions", "passingTDs", "rushingAttempts", "rushingTDs",
