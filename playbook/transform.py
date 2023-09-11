@@ -1,24 +1,49 @@
 import pandas as pd
 import sqlite3
-def sqlite_query_table(table_name):
+from datetime import date
+from datetime import datetime
+
+def sqlite_query_table_by_year(table_name):
     conn = sqlite3.connect('blitzalytics.db')
-    query = f"SELECT * FROM {table_name}"
+    #query = f"SELECT * FROM {table_name}"
+    query = f"""
+        SELECT t1.*
+        FROM {table_name} t1
+        JOIN (
+            SELECT season, MAX(timestamp) AS max_timestamp
+            FROM {table_name}
+            GROUP BY season
+        ) t2
+        ON t1.season = t2.season AND t1.timestamp = t2.max_timestamp
+    """
     df_table = pd.read_sql_query(query, conn)
     conn.close()
     return df_table
 
-def season_stats():
-    global df_cfb_season_stats_all
+def sqlite_query_table(table_name):
+    conn = sqlite3.connect('blitzalytics.db')
+    #query = f"SELECT * FROM {table_name}"
+    query = f"""
+        SELECT *
+        FROM {table_name}
+        WHERE timestamp = (SELECT MAX(timestamp) FROM {table_name} )
+        """
+    df_table = pd.read_sql_query(query, conn)
+    conn.close()
+    return df_table
+
+def insert_cfbd_to_sqlite(cfb_table_name,df_cfbd_data):
+    conn = sqlite3.connect('blitzalytics.db')
+    df_cfbd_data.to_sql(cfb_table_name, conn, if_exists='append', index=False)
+    conn.close()
+
+def season_stats(years):
     print('Transforming Season Stats')
-    df_season_stats = sqlite_query_table('season_stats')
+    df_season_stats = sqlite_query_table('extract_season_stats')
 
-    df_season_stats_year_pivot = df_season_stats.pivot(index=['team', 'season'], columns='statName', values='statValue').reset_index()
-
-    #Convert list to df with pivot table
-    for df_season_stats_year in list_df_cfb_season_stats_pre_pivot:
-        list_df_cfb_season_stats_all.append(df_season_stats_year.pivot(index=['team', 'season'], columns='statName', values='statValue').reset_index())
-    df_cfb_season_stats_all_original = pd.concat(list_df_cfb_season_stats_all)
-
+    # Convert list to df with pivot table
+    df_cfb_season_stats_all_original = df_season_stats.pivot(index=['team', 'season'], columns='statName', values='statValue').reset_index()
+    #Rename the columns based on offense/defense/special teams
     df_cfb_season_stats_all_original.rename(columns = lambda col: f"offense_{col}"
                                                     if col in ("possessionTime", "firstDowns", "fourthDownConversions", "fourthDowns", "fumblesLost", "passAttempts",
                                                                "netPassingYards", "passesIntercepted", "passCompletions", "passingTDs", "rushingAttempts", "rushingTDs",
@@ -41,28 +66,18 @@ def season_stats():
         df_cfb_season_stats_all_for_loop['offense_firstDowns_zscore'] = (df_cfb_season_stats_all_for_loop['offense_firstDowns'] - df_cfb_season_stats_all_for_loop['offense_firstDowns'].mean()) / df_cfb_season_stats_all_for_loop['offense_firstDowns'].std()
         #Fourth Downs
         df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_zscore'] = (df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'] - df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'].mean()) / df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'].std()
-        #df_cfb_season_stats_all_for_loop['offense_fourthDowns_zscore'] = (df_cfb_season_stats_all_for_loop['offense_fourthDowns'] - df_cfb_season_stats_all_for_loop['offense_fourthDowns'].mean()) / df_cfb_season_stats_all_for_loop['offense_fourthDowns'].std()
-        #Calculate Actual Fourth Down Completion Percentage
-        #df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'] = (df_cfb_season_stats_all_for_loop['offense_fourthDownConversions'] / df_cfb_season_stats_all_for_loop['offense_fourthDowns'])
-        #df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent_zscore'] = (df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'] - df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'].mean()) / df_cfb_season_stats_all_for_loop['offense_fourthDownConversions_percent'].std()
         #Pass Attempts and Completions
-        #df_cfb_season_stats_all_for_loop['offense_passAttempts_zscore'] = (df_cfb_season_stats_all_for_loop['offense_passAttempts'] - df_cfb_season_stats_all_for_loop['offense_passAttempts'].mean()) / df_cfb_season_stats_all_for_loop['offense_passAttempts'].std()
         df_cfb_season_stats_all_for_loop['offense_passCompletions_zscore'] = (df_cfb_season_stats_all_for_loop['offense_passCompletions'] - df_cfb_season_stats_all_for_loop['offense_passCompletions'].mean()) / df_cfb_season_stats_all_for_loop['offense_passCompletions'].std()
         #Calculate Actual Pass Completion Percentage
         df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'] = (df_cfb_season_stats_all_for_loop['offense_passCompletions'] / df_cfb_season_stats_all_for_loop['offense_passAttempts'])
         df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent_zscore'] = (df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'] - df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'].mean()) / df_cfb_season_stats_all_for_loop['offense_passCompletion_Conversions_percent'].std()
         #Rushing Attempts and Total Yards
-        #df_cfb_season_stats_all_for_loop['offense_rushingAttempts_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingAttempts'] - df_cfb_season_stats_all_for_loop['offense_rushingAttempts'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingAttempts'].std()
         df_cfb_season_stats_all_for_loop['offense_rushingYards_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingYards'] - df_cfb_season_stats_all_for_loop['offense_rushingYards'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingYards'].std()
         #Calculate Average Rushing Yards
         df_cfb_season_stats_all_for_loop['offense_rushingYards_average'] = (df_cfb_season_stats_all_for_loop['offense_rushingYards'] / df_cfb_season_stats_all_for_loop['offense_rushingAttempts'])
         df_cfb_season_stats_all_for_loop['offense_rushingYards_average_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingYards_average'] - df_cfb_season_stats_all_for_loop['offense_rushingYards_average'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingYards_average'].std()
         #Third Downs and Third Down conversions
         df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_zscore'] = (df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'] - df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'].mean()) / df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'].std()
-        #df_cfb_season_stats_all_for_loop['offense_thirdDowns_zscore'] = (df_cfb_season_stats_all_for_loop['offense_thirdDowns'] - df_cfb_season_stats_all_for_loop['offense_thirdDowns'].mean()) / df_cfb_season_stats_all_for_loop['offense_thirdDowns'].std()
-        #Calculate Actual Third Down Completion Percentage
-        #df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'] = (df_cfb_season_stats_all_for_loop['offense_thirdDownConversions'] / df_cfb_season_stats_all_for_loop['offense_thirdDowns'])
-        #df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent_zscore'] = (df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'] - df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'].mean()) / df_cfb_season_stats_all_for_loop['offense_thirdDownConversions_percent'].std()
         #Totals and other stats
         df_cfb_season_stats_all_for_loop['offense_rushingTDs_zscore'] = (df_cfb_season_stats_all_for_loop['offense_rushingTDs'] - df_cfb_season_stats_all_for_loop['offense_rushingTDs'].mean()) / df_cfb_season_stats_all_for_loop['offense_rushingTDs'].std()
         df_cfb_season_stats_all_for_loop['offense_totalYards_zscore'] = (df_cfb_season_stats_all_for_loop['offense_totalYards'] - df_cfb_season_stats_all_for_loop['offense_totalYards'].mean()) / df_cfb_season_stats_all_for_loop['offense_totalYards'].std()
@@ -96,11 +111,14 @@ def season_stats():
         df_cfb_season_stats_all_for_loop['total_zscore'] = df_cfb_season_stats_all_for_loop['offense_zscore_final'] + df_cfb_season_stats_all_for_loop['defense_zscore_final'] + df_cfb_season_stats_all_for_loop['specialteams_zscore_final']
         list_df_cfb_season_stats_all_for_loop_by_year.append(df_cfb_season_stats_all_for_loop)
     df_cfb_season_stats_all = pd.concat(list_df_cfb_season_stats_all_for_loop_by_year)
-def games_and_stats():
-    global df_cfb_season_games_all_updated
-    global df_cfb_season_games_all
 
+    #Insert the transformed data into the DB
+    insert_cfbd_to_sqlite('transform_season_stats', df_cfb_season_stats_all)
+
+def games_and_stats():
     print('Transforming Game Matchups')
+    df_cfb_team_info = sqlite_query_table('extract_team_info')
+    df_cfb_season_games_all = sqlite_query_table_by_year('extract_season_games')
     # Clean up Team Info Data
     df_cfb_teaminfo_drop = df_cfb_team_info.dropna(subset=['conference'])
     df_select_col_cfb_teaminfo = df_cfb_teaminfo_drop[["id", "school", "conference", "location.venue_id","location.name","location.zip"]]
@@ -108,7 +126,7 @@ def games_and_stats():
     #Add Columns for Game Matchup and Date without timestamps
     df_cfb_season_games_all["Game Matchup"] = df_cfb_season_games_all[['away_team', 'home_team']].apply(" @ ".join, axis=1)
     df_cfb_season_games_all['start_date'] = df_cfb_season_games_all['start_date'].str.replace('.000Z', '')
-    df_cfb_season_games_all['start_date'] = pd.to_datetime(df_cfb_season_games_all['start_date'],infer_datetime_format=True, errors='coerce')
+    df_cfb_season_games_all['start_date'] = pd.to_datetime(df_cfb_season_games_all['start_date'])
     df_cfb_season_games_all["date"] = df_cfb_season_games_all["start_date"].dt.date
     cfb_season_games_all_date_col = df_cfb_season_games_all['date']
     df_cfb_season_games_all.drop(labels=['date'], axis=1, inplace=True)
@@ -135,11 +153,17 @@ def games_and_stats():
     #Rename the dataframe and fill NA rows
     df_cfb_season_games_all_updated = df_cfb_season_games_all_append_and_original_sel_col_joined
     df_cfb_season_games_all_updated.fillna(0, inplace=True)
-    df_cfb_season_games_all_updated['points'].astype('int64')
+    #df_cfb_season_games_all_updated['points'].replace('None', '0').astype(float)
+    df_cfb_season_games_all_updated['points'].astype(float).astype(int)
+
+    # Insert the transformed data into the DB
+    insert_cfbd_to_sqlite('transform_season_games_stats_updated', df_cfb_season_games_all_updated)
+    insert_cfbd_to_sqlite('transform_season_games_stats_all', df_cfb_season_games_all)
 
 def games_and_aggregate_scores():
-    global df_cfb_season_games_agg_scores
     print('Transforming Home and Away Aggregate Scores')
+    df_cfb_season_games_all = sqlite_query_table_by_year('extract_season_games')
+
     #Transform average scores for home and away
     #Transform Home game scores
     df_cfb_season_games_home_group_scores = df_cfb_season_games_all[['home_team', 'home_points', 'season']]
@@ -157,10 +181,14 @@ def games_and_aggregate_scores():
     #Transform Merge Home and Away scores together
     df_cfb_season_games_agg_scores = pd.merge(df_cfb_season_games_home_agg_scores_merged, df_cfb_season_games_away_agg_scores_merged, left_on=['team','season'], right_on=['team','season'], how='left')
 
+    # Insert the transformed data into the DB
+    insert_cfbd_to_sqlite('transform_season_games_agg_scores', df_cfb_season_games_agg_scores)
+
 def odds():
-    global df_cfb_odds_per_game_with_calc
-    global df_cfb_season_games_odds_for_summary
     print('Transforming Odds/Spread')
+    df_cfb_odds_per_game_all = sqlite_query_table_by_year('extract_odds_per_game')
+    df_cfb_season_games_all = sqlite_query_table_by_year('extract_season_games')
+
     #Transform odds per game
     #Prep the odds data
     df_cfb_odds_per_game_rename = df_cfb_odds_per_game_all.rename(columns={"gameId": "id", "homeWinProb": "home_team_WinProb" })
@@ -250,9 +278,12 @@ def odds():
     df_cfb_season_games_odds_append_sel_col = df_cfb_season_games_odds_append[['id','team','spread','home_team_WinProb','game_point_diff','result_of_the_spread', 'average_spread_covered_by_year','total_spread_covered_by_year',]]
     df_cfb_odds_per_game_with_calc = df_cfb_season_games_odds_append_sel_col
 
+    # Insert the transformed data into the DB
+    insert_cfbd_to_sqlite('transform_odds_per_game_with_calc', df_cfb_odds_per_game_with_calc)
+    insert_cfbd_to_sqlite('transform_odds_for_summary', df_cfb_season_games_odds_for_summary)
+
 def epa():
-    global df_cfb_epa_per_game
-    global df_cfb_epa_per_season_for_summary
+    df_cfb_epa_per_game_all = sqlite_query_table_by_year('extract_epa')
     print('Transforming EPA')
     #Transform EPA
     df_cfb_epa_per_game_all_rename_col = df_cfb_epa_per_game_all.rename(columns={"gameId": "id"})
@@ -270,9 +301,13 @@ def epa():
                                                                                                                     epa_per_game_defense_overall_avg_per_season = ('epa_per_game_defense.overall', 'mean')).round(2).reset_index()
     df_cfb_epa_per_season_for_summary = df_cfb_epa_per_game_all_rename_col_groupby
 
+    # Insert the transformed data into the DB
+    insert_cfbd_to_sqlite('transform_epa_per_game', df_cfb_epa_per_game)
+    insert_cfbd_to_sqlite('transform_epa_per_season_for_summary', df_cfb_epa_per_season_for_summary)
+
 def polls():
-    global df_cfb_ranking_groupby_ap
-    global df_cfb_ranking_all_updated
+    df_cfb_ranking_all = sqlite_query_table_by_year('extract_rankings')
+
     print('Transforming Polls/Rankings')
     df_cfb_ranking_all_rm_null_ap = df_cfb_ranking_all[df_cfb_ranking_all['AP Top 25'].notnull()]
     df_cfb_ranking_all_rename = df_cfb_ranking_all_rm_null_ap.rename(columns={"school": "team"})
@@ -284,37 +319,67 @@ def polls():
     df_cfb_ranking_groupby_ap = df_cfb_ranking_all_drop.groupby(['team', 'season'])['AP Top 25 by Week'].agg(", ".join).reset_index()
     df_cfb_ranking_all_updated = df_cfb_ranking_all_drop
 
+    # Insert the transformed data into the DB
+    insert_cfbd_to_sqlite('transform_rankings_groupby_ap', df_cfb_ranking_groupby_ap)
+    insert_cfbd_to_sqlite('transform_rankings_all_updated', df_cfb_ranking_all_updated)
 
-def records():
-    global df_cfb_team_record_all_select_col
+
+def team_records():
     print('Transforming Team Records')
+    df_cfb_team_record_all = sqlite_query_table_by_year('extract_team_records')
+
     #Transform Team Records
-    df_cfb_team_record_all_rename = df_cfb_team_record_all.rename(columns={"year": "season"})
-    df_cfb_team_record_all_select_col = df_cfb_team_record_all_rename[["team", "season","total.wins", "total.losses", "conferenceGames.wins", "conferenceGames.losses"]]
+    #df_cfb_team_record_all_rename = df_cfb_team_record_all.rename(columns={"year": "season"})
+    df_cfb_team_record_all_select_col = df_cfb_team_record_all[["team", "season", "total.wins", "total.losses", "conferenceGames.wins", "conferenceGames.losses"]]
+
+    #Insert the transformed data into the DB
+    insert_cfbd_to_sqlite('transform_team_record',  df_cfb_team_record_all_select_col)
 
 def stats_per_game():
-    global df_cfb_stats_per_game
     print('Transforming Stats per game')
+    df_cfb_stats_per_game_all = sqlite_query_table_by_year('extract_stats_per_game')
+
     #Transform Stats per Game
     df_cfb_stats_per_game_rename = df_cfb_stats_per_game_all.rename(columns={"gameId": "id"})
     df_cfb_stats_per_game = df_cfb_stats_per_game_rename.drop(columns=['opponent'])
 
+    # Insert the transformed data into the DB
+    insert_cfbd_to_sqlite('transform_stats_per_game', df_cfb_stats_per_game)
+
 def team_info():
-    global df_cfb_team_info_updated
+    df_cfb_team_info = sqlite_query_table('extract_team_info')
+
     df_cfb_team_info_rename = df_cfb_team_info.rename(columns={"school": "team"})
     df_cfb_team_info_updated = df_cfb_team_info_rename.loc[df_cfb_team_info_rename['classification'].str.contains("fbs|fcs", case=False, na=False)]
 
-def week():
-    global current_week
+    #Insert the transformed data into the DB
+    insert_cfbd_to_sqlite('transform_team_info', df_cfb_team_info_updated)
+
+
+def reporting_week(arg_report_week):
+    print('Calculating reporting week')
+    df_cfb_season_games_all = sqlite_query_table_by_year('transform_season_games_stats_all')
     date_today = datetime.combine(date.today(), datetime.min.time())
     date_today_day = date.today().strftime('%A')
-    df_cfb_date_group_bys = df_cfb_season_games_all.groupby(['season','week'])['date'].first().reset_index()
+
+    df_cfb_date_group_bys = df_cfb_season_games_all.groupby(['season', 'week'])['date'].first().reset_index()
+
     df_cfb_date_group_bys['date'] = pd.to_datetime(df_cfb_date_group_bys['date'])
 
     date_compare = (df_cfb_date_group_bys["date"].shift() < date_today) & (df_cfb_date_group_bys["date"] > date_today)
     df_date_compare_result = df_cfb_date_group_bys[date_compare]
     current_week = df_date_compare_result['week'].to_string(index=False)
     current_week = 1
+    return (current_week)
+
+def reporting_year(arg_report_year):
+    print('Calculating reporting year')
+    if arg_report_year is not None:
+        report_year = arg_report_year
+        return (report_year)
+    else:
+        report_year = date.today().year
+        return (report_year)
 
 def combine_data():
     global cfb_summary_join_record_rank_agg_zscores_epa_sorted

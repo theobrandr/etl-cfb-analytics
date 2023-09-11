@@ -83,13 +83,13 @@ def check_sqllite_db():
 
 def years_of_data_to_pull(arg_previous_years):
     current_year = date.today().year
-    print(arg_previous_years)
     if arg_previous_years:
         years = list(range(current_year, current_year - 5, -1))
         return(years)
     else:
         years = [current_year]
         return(years)
+
 def delete_all_tables():
     print("Warning, this will delete all the tables in the CFB Database.")
     selector_db_delete = input("Type y to Continue or type any other key to quit:")
@@ -107,12 +107,3 @@ def delete_all_tables():
     else:
         exit()
 
-def argument_check(args):
-    if args.previous_years:
-        print("Pulling data for previous years")
-    if args.report_week is not None:
-        print(f"Reporting week set to {args.report_week}")
-    if args.report_year is not None:
-        print(f"Reporting year set to {args.report_year}")
-    if args.delete_tables:
-        delete_all_tables()

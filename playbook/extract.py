@@ -33,9 +33,9 @@ timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 def default_json_to_df(response_json):
     df_cfbd_response = pd.json_normalize(response_json, errors='ignore')
     df_cfbd_response['timestamp'] = timestamp
-    cfbd_int_columns = df_cfbd_response.select_dtypes(include=['int']).columns
-    df_cfbd_response[cfbd_int_columns] = df_cfbd_response[cfbd_int_columns].fillna(0)
-    df_cfbd_response.fillna("None", inplace=True)
+    #cfbd_int_columns = df_cfbd_response.select_dtypes(include=['int']).columns
+    #df_cfbd_response[cfbd_int_columns] = df_cfbd_response[cfbd_int_columns].fillna(0)
+    #df_cfbd_response.fillna("None", inplace=True)
     return df_cfbd_response
 
 def cfbd_api_request(cfbd_request_url):
@@ -51,30 +51,31 @@ def cfbd_api_request(cfbd_request_url):
 
 def insert_cfbd_to_sqlite(cfb_table_name,df_cfbd_data):
     conn = sqlite3.connect('blitzalytics.db')
-    df_cfbd_data.to_sql(cfb_table_name, conn, if_exists='replace', index=False)
+    df_cfbd_data.to_sql(cfb_table_name, conn, if_exists='append', index=False)
     conn.close()
 
 def cfbd_team_info():
     request_url = str(cfb_url + str('teams'))
     response_json = cfbd_api_request(request_url)
     df_cfbd_data = default_json_to_df(response_json)
+    df_cfbd_data['timestamp'] = timestamp
     df_cfbd_data['logos'] = df_cfbd_data['logos'].astype(str)
     #df_cfbd_data.drop('logos', axis=1, inplace=True)
-    insert_cfbd_to_sqlite('team_info', df_cfbd_data)
+    insert_cfbd_to_sqlite('extract_team_info', df_cfbd_data)
 
 def cfbd_venue_info():
     request_url = str(cfb_url + str('venues'))
     response_json = cfbd_api_request(request_url)
     df_cfbd_data = default_json_to_df(response_json)
-    insert_cfbd_to_sqlite('venue_info', df_cfbd_data)
+    insert_cfbd_to_sqlite('extract_venue_info', df_cfbd_data)
 
 def cfbd_coach_info():
     request_url = str(cfb_url + str('coaches?minYear=2010'))
     response_json = cfbd_api_request(request_url)
     df_cfbd_data = pd.json_normalize(response_json, record_path=['seasons'], meta=['first_name', 'last_name'],
                                                 errors='ignore')
-
-    insert_cfbd_to_sqlite('coach_info', df_cfbd_data)
+    df_cfbd_data['timestamp'] = timestamp
+    insert_cfbd_to_sqlite('extract_coach_info', df_cfbd_data)
 
 def cfbd_fbs_season_games(years):
     for year in years:
@@ -83,21 +84,22 @@ def cfbd_fbs_season_games(years):
         df_cfbd_data = default_json_to_df(response_json)
         df_cfbd_data['home_line_scores'] = df_cfbd_data['home_line_scores'].astype(str)
         df_cfbd_data['away_line_scores'] = df_cfbd_data['away_line_scores'].astype(str)
-        insert_cfbd_to_sqlite('season_games', df_cfbd_data)
+        insert_cfbd_to_sqlite('extract_season_games', df_cfbd_data)
 
-def cfbd_records(years):
+def cfbd_team_records(years):
     for year in years:
         request_url = str(cfb_url + str('records?year=' + str(year)))
         response_json = cfbd_api_request(request_url)
-        df_cfbd_data = default_json_to_df(response_json)
-        insert_cfbd_to_sqlite('records', df_cfbd_data)
+        df_cfbd_data_original = default_json_to_df(response_json)
+        df_cfbd_data = df_cfbd_data_original.rename(columns={"year": "season"})
+        insert_cfbd_to_sqlite('extract_team_records', df_cfbd_data)
 
 def cfbd_season_stats(years):
     for year in years:
         request_url = str(cfb_url + str('stats/season?year=' + str(year)))
         response_json = cfbd_api_request(request_url)
         df_cfbd_data = default_json_to_df(response_json)
-        insert_cfbd_to_sqlite('season_stats', df_cfbd_data)
+        insert_cfbd_to_sqlite('extract_season_stats', df_cfbd_data)
 
 def cfbd_rankings(years):
     for year in years:
@@ -109,26 +111,28 @@ def cfbd_rankings(years):
         df_cfbd_data_normalized = df_cfbd_data_normalized.rename(columns={"polls.poll": "Poll Name"})
         df_cfbd_data = df_cfbd_data_normalized.pivot_table(index=['week', 'school', 'season'], columns=['Poll Name'],
                                                             values='rank').reset_index()
-        insert_cfbd_to_sqlite('rankings', df_cfbd_data)
+        df_cfbd_data['timestamp'] = timestamp
+        insert_cfbd_to_sqlite('extract_rankings', df_cfbd_data)
 
 def cfbd_epa(years):
     for year in years:
         request_url = str(cfb_url + str('ppa/games?year=' + str(year) + '&seasonType=regular'))
         response_json = cfbd_api_request(request_url)
         df_cfbd_data = default_json_to_df(response_json)
-        insert_cfbd_to_sqlite('epa', df_cfbd_data)
+        insert_cfbd_to_sqlite('extract_epa', df_cfbd_data)
 
 def cfbd_odds_per_game(years):
     for year in years:
         request_url = str(cfb_url + str('metrics/wp/pregame?year=' + str(year) + '&seasonType=regular'))
         response_json = cfbd_api_request(request_url)
         df_cfbd_data = default_json_to_df(response_json)
-        insert_cfbd_to_sqlite('odds_per_game', df_cfbd_data)
+        insert_cfbd_to_sqlite('extract_odds_per_game', df_cfbd_data)
 
 def cfbd_stats_per_game(years):
     for year in years:
         request_url = str(cfb_url + str('stats/game/advanced?year=' + str(year)))
         response_json = cfbd_api_request(request_url)
         df_cfbd_data = default_json_to_df(response_json)
-        insert_cfbd_to_sqlite('stats_per_game', df_cfbd_data)
+        df_cfbd_data['season'] = year
+        insert_cfbd_to_sqlite('extract_stats_per_game', df_cfbd_data)
 
