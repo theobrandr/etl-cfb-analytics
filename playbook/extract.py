@@ -6,6 +6,7 @@ from datetime import datetime
 import dotenv
 import sqlite3
 import pandas as pd
+from .pregame import timestamp
 
 #Load Enviroment Variables
 dotenv.load_dotenv()
@@ -26,9 +27,6 @@ file_env = dotenv.find_dotenv()
 cfb_api_key = os.environ.get('env_cfb_api_key')
 cfb_url = 'https://api.collegefootballdata.com/'
 headers_cfb = {'accept': 'application/json', 'Authorization': ('Bearer' + ' ' + str(cfb_api_key)), }
-
-#Datetimestamp to insert into DB during each extraction
-timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def default_json_to_df(response_json):
     df_cfbd_response = pd.json_normalize(response_json, errors='ignore')

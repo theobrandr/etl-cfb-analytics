@@ -34,6 +34,7 @@ if args.report_year is not None:
 if args.delete_tables:
    pregame.delete_all_tables()
 
+
 if __name__ == '__main__':
     print("Blitzalytics: Your Playbook to Success through College Football Data ETL's and Reporting.")
     # Prepare and check the ETL is ready to run
@@ -71,12 +72,9 @@ if __name__ == '__main__':
     transform.team_info()
     reporting_week = transform.reporting_week(args.report_week)
     reporting_year = transform.reporting_year(args.report_year)
+    transform.combine_data_for_summary(reporting_year)
+    transform.prep_data_for_reporting()
 
-    '''
-    transform.summary_data()
-    transform.data_for_load()
-    #Load the Transformed Data to Excel
-    load.data_to_excel()
     #Create Reports from Transformed College Football Data
     reporting.current_week_matchups()
-    '''
+

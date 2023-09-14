@@ -6,7 +6,10 @@ import sqlite3
 
 #Load Enviroment Variables
 dotenv.load_dotenv()
-#Variables
+
+#Datetimestamp to insert into DB
+global timestamp
+timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def filepath_check():
     # Year and week variables for CFB API
