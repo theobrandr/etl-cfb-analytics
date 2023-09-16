@@ -3,7 +3,7 @@ import argparse
 from datetime import date
 from datetime import datetime
 
-parser = argparse.ArgumentParser(description='Blitzalytics Arguments')
+parser = argparse.ArgumentParser(description='blitzanalytics Arguments')
 parser.add_argument("-p", "--previous_years", action='store_true',
                     help="Pull data for the last 5 years. By default only the current year will be pulled")
 parser.add_argument("-r", "--report_week", type=int, default=None,
@@ -40,7 +40,7 @@ if args.delete_tables:
 
 
 if __name__ == '__main__':
-    print("Blitzalytics: Your Playbook to Success through College Football Data ETL's and Reporting.")
+    print("blitzanalytics: Your Playbook to Success through College Football Data ETL's and Reporting.")
     # Prepare and check the ETL is ready to run
     pregame.filepath_check()
     pregame.api_key_check()

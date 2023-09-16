@@ -48,7 +48,7 @@ def cfbd_api_request(cfbd_request_url):
 
 
 def insert_cfbd_to_sqlite(cfb_table_name,df_cfbd_data):
-    conn = sqlite3.connect('blitzalytics.db')
+    conn = sqlite3.connect('blitzanalytics.db')
     df_cfbd_data.to_sql(cfb_table_name, conn, if_exists='append', index=False)
     conn.close()
 

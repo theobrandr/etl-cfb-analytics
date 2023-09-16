@@ -75,7 +75,7 @@ def api_key_check():
 
 def check_sqllite_db():
     # Testing Connection to sqlite CFB.DB
-    connection = sqlite3.connect("blitzalytics.db")
+    connection = sqlite3.connect("blitzanalytics.db")
     cursor = connection.cursor()
     sql_version_query = 'select sqlite_version();'
     cursor.execute(sql_version_query)
@@ -97,7 +97,7 @@ def delete_all_tables():
     print("Warning, this will delete all the tables in the CFB Database.")
     selector_db_delete = input("Type y to Continue or type any other key to quit:")
     if selector_db_delete == 'y':
-        conn = sqlite3.connect('blitzalytics.db')
+        conn = sqlite3.connect('blitzanalytics.db')
         cursor = conn.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = cursor.fetchall()
