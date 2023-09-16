@@ -16,14 +16,17 @@ parser.add_argument("-s", "--skip_extract", action='store_true',
                     help="Skip the data extraction process if new data is not needed")
 
 args = parser.parse_args()
+
 if args.previous_years:
     print("Pulling data for previous years and current year")
+
 if args.report_week is not None:
     if args.report_week > 1 < 16:
         print(f"Reporting week set to {args.report_week}")
     else:
         print("Not a valid reporting week. Please use a week number between 1 and 15")
         exit()
+
 if args.report_year is not None:
     current_year = date.today().year
     possible_report_years = list(range(current_year, current_year - 5, -1))
@@ -31,6 +34,7 @@ if args.report_year is not None:
         print(f"Reporting year set to {args.report_year}")
     else:
         print(f"Not a valid reporting week. Please use a year within the last 5 years. {possible_report_years}")
+
 if args.delete_tables:
    pregame.delete_all_tables()
 
@@ -76,5 +80,5 @@ if __name__ == '__main__':
     transform.prep_data_for_reporting()
 
     #Create Reports from Transformed College Football Data
-    reporting.current_week_matchups()
+    reporting.matchups(reporting_year, reporting_week)
 

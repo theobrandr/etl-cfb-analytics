@@ -373,7 +373,7 @@ def reporting_week(arg_report_week):
     date_compare = (df_cfb_date_group_bys["date"].shift() < date_today) & (df_cfb_date_group_bys["date"] > date_today)
     df_date_compare_result = df_cfb_date_group_bys[date_compare]
     current_week = df_date_compare_result['week'].to_string(index=False)
-    current_week = 1
+    current_week = 3
     return (current_week)
 
 def reporting_year(arg_report_year):
