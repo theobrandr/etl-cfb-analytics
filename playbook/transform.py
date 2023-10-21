@@ -366,14 +366,13 @@ def reporting_week(arg_report_week):
     date_today = datetime.combine(date.today(), datetime.min.time())
     date_today_day = date.today().strftime('%A')
 
-    df_cfb_date_group_bys = df_cfb_season_games_all.groupby(['season', 'week'])['date'].first().reset_index()
+    df_cfb_date_group_bys = df_cfb_season_games_all.groupby(['season', 'week'])['date'].last().reset_index()
 
     df_cfb_date_group_bys['date'] = pd.to_datetime(df_cfb_date_group_bys['date'])
 
     date_compare = (df_cfb_date_group_bys["date"].shift() < date_today) & (df_cfb_date_group_bys["date"] > date_today)
     df_date_compare_result = df_cfb_date_group_bys[date_compare]
     current_week = df_date_compare_result['week'].to_string(index=False)
-    current_week = 3
     return (current_week)
 
 def reporting_year(arg_report_year):

@@ -110,6 +110,10 @@ def cfbd_rankings(years):
         df_cfbd_data = df_cfbd_data_normalized.pivot_table(index=['week', 'school', 'season'], columns=['Poll Name'],
                                                             values='rank').reset_index()
         df_cfbd_data['timestamp'] = timestamp
+        column_name = 'Playoff Committee Rankings'
+        if column_name not in df_cfbd_data.columns:
+            df_cfbd_data['Playoff Committee Rankings'] = ''
+
         insert_cfbd_to_sqlite('extract_rankings', df_cfbd_data)
 
 def cfbd_epa(years):
