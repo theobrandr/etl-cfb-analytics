@@ -46,6 +46,19 @@ def cfbd_api_request(cfbd_request_url):
     response_json = json.loads(response.text)
     return response_json
 
+def remove_old_extracted_data(cfb_table_name,df_cfbd_data):
+    conn = sqlite3.connect('blitzanalytics.db')
+    # query = f"SELECT * FROM {table_name}"
+    query = f"""
+            DELETE FROM {table_name}
+            WHERE (ID, timestamp) NOT IN (
+                SELECT ID, MAX(timestamp) AS latest_date
+                FROM {table_name}
+                GROUP BY ID
+            );
+            """
+    df_table = pd.read_sql_query(query, conn)
+    conn.close()
 
 def insert_cfbd_to_sqlite(cfb_table_name,df_cfbd_data):
     conn = sqlite3.connect('blitzanalytics.db')

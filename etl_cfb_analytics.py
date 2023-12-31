@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
 
+#Load Enviroment Variables
 dotenv.load_dotenv()
 #Variables
 
@@ -390,7 +391,6 @@ def function_cfb_extract_json_to_df():
     df_cfb_ranking_all = df_cfb_ranking_all.rename(columns={"polls.poll": "Poll Name"})
     df_cfb_ranking_all = df_cfb_ranking_all.pivot_table(index=['week', 'school', 'season'], columns=['Poll Name'], values='rank').reset_index()
 
-
 def function_cfb_transform_season_stats():
     global df_cfb_season_stats_all
     print('Transforming Season Stats')
@@ -685,7 +685,7 @@ def function_cfb_transform_week():
     global current_week
     date_today = datetime.combine(date.today(), datetime.min.time())
     date_today_day = date.today().strftime('%A')
-    df_cfb_date_group_bys = df_cfb_season_games_all.groupby(['season','week'])['date'].first().reset_index()
+    df_cfb_date_group_bys = df_cfb_season_games_all.groupby(['season','week'])['date'].last().reset_index()
     df_cfb_date_group_bys['date'] = pd.to_datetime(df_cfb_date_group_bys['date'])
 
     date_compare = (df_cfb_date_group_bys["date"].shift() < date_today) & (df_cfb_date_group_bys["date"] > date_today)
@@ -860,8 +860,11 @@ def function_cfb_reporting_current_week():
     file_path_cfb_reports_current_year_week = file_path_cfb_reports_current_year + 'Week_' + str(current_week) + '/'
     #df_cfb_for_reporting_game_matchup = cfb_season_week_matchups.loc[cfb_season_week_matchups['season'].astype(str).str.contains(str(current_year), regex=False, case=False, na=False)]
     df_cfb_for_reporting_game_matchup = cfb_season_week_matchups.loc[cfb_season_week_matchups['season'] == str(current_year)]
-    df_cfb_for_reporting_game_matchup_current_week = df_cfb_for_reporting_game_matchup.loc[df_cfb_for_reporting_game_matchup['week'] == int(current_week)]
+    df_cfb_for_reporting_game_matchup_current_week_tmp = df_cfb_for_reporting_game_matchup.loc[df_cfb_for_reporting_game_matchup['week'] == int(current_week)]
     cfb_all_data_current_year = cfb_all_data.loc[cfb_all_data['season'] == str(current_year)]
+
+    df_cfb_for_reporting_game_matchup_current_week = df_cfb_for_reporting_game_matchup_current_week_tmp.loc[
+        ~df_cfb_for_reporting_game_matchup_current_week_tmp['id'].astype(str).str.contains('401520276', regex=False, case=False, na=False)]
 
     for index, row in df_cfb_for_reporting_game_matchup_current_week.iterrows():
         home_team = row['home_team']
@@ -909,16 +912,16 @@ def function_cfb_reporting_current_week():
         fig_df_matchup_summary = plt.figure("fig_matchup_summary", figsize=(10, 5))
         fig_df_matchup_summary.ax1 = fig_df_matchup_summary.add_subplot(311)
         fig_df_matchup_summary.ax1.axis('off')
-        fig_df_matchup_summary.ax1.table(cellText=df_matchup_summary.values, colLabels=df_matchup_summary.columns)
+        fig_df_matchup_summary.ax1.table(cellText=df_matchup_summary.values, colLabels=df_matchup_summary.columns, loc='center', fontsize=14)
 
         fig_df_matchup_summary.ax2 = fig_df_matchup_summary.add_subplot(312)
         fig_df_matchup_summary.ax2.axis('off')
-        fig_df_matchup_summary.ax2.table(cellText=df_cfb_summary_matchup_current_year.values, colLabels=df_cfb_summary_matchup_current_year.columns)
+        fig_df_matchup_summary.ax2.table(cellText=df_cfb_summary_matchup_current_year.values, colLabels=df_cfb_summary_matchup_current_year.columns, loc='center', fontsize=14)
 
         fig_df_matchup_summary.ax3 = fig_df_matchup_summary.add_subplot(313)
         fig_df_matchup_summary.ax3.axis('off')
         fig_df_matchup_summary.ax3.table(cellText=df_matchup_home_away_all_data_current_season_sel_col.values,
-                  colLabels=df_matchup_home_away_all_data_current_season_sel_col.columns)
+                  colLabels=df_matchup_home_away_all_data_current_season_sel_col.columns, loc='center', fontsize=14)
 
         #Create DF and figure for Season Stats Table
         df_matchup_season_stats_offense = df_cfb_season_stats_by_season_home_away_append[
@@ -1115,8 +1118,8 @@ def funtion_cfb_load_to_excel():
 function_cfb_pregame_filepath_check()
 function_cfb_pregame_api_check()
 function_cfb_pregame_api_pull_previous_years_check()
-function_cfb_extract_current_year_api_pull()
-function_cfb_extract_team_info_api_pull()
+#function_cfb_extract_current_year_api_pull()
+#function_cfb_extract_team_info_api_pull()
 function_cfb_extract_json_to_df()
 function_cfb_transform_season_stats()
 function_cfb_transform_games_and_stats()
