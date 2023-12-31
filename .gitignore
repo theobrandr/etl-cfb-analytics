@@ -132,4 +132,5 @@ dmypy.json
 api_files
 reports
 cfb.xlsx
-.env
+blitzanalytics.db
+
