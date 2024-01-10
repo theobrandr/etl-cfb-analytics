@@ -18,7 +18,7 @@ parser.add_argument("-r", "--report_week", type=int, default=None,
 parser.add_argument("-y", "--report_year", type=int, default=None,
                     help="Specify a year for reporting. Default year is the current year")
 parser.add_argument("-t", "--season_type", action='store_true',
-                    help="regular for Regular Season or post for Post Season")
+                    help="regular for Regular Season or postseason for Postseason")
 parser.add_argument("-d", "--delete_tables", action='store_true',
                     help="Delete all DB tables if the DB is taking up too much space. Run the program with -p after to re-populate the DB.")
 parser.add_argument("-s", "--skip_extract", action='store_true',
