@@ -42,14 +42,9 @@ def insert_cfbd_to_sqlite(cfb_table_name,df_cfbd_data):
     df_cfbd_data.to_sql(cfb_table_name, conn, if_exists='append', index=False)
     conn.close()
 
-
-def data_to_excel():
-    print('Loading Datasets to xlsx')
-    with pd.ExcelWriter(str(file_path_cfb) + '/cfb.xlsx') as writer:
-        cfb_summary.to_excel(writer, sheet_name='cfb_summary', engine='xlsxwriter')
-        cfb_games_with_spread_analytics.to_excel(writer, sheet_name='cfb_games_spread', engine='xlsxwriter')
-        cfb_season_stats_by_season.to_excel(writer, sheet_name='cfb_season_stats_by_season', engine='xlsxwriter')
-        cfb_season_games_agg_scores.to_excel(writer, sheet_name='cfb_games_scores', engine='xlsxwriter')
-        cfb_team_record_by_year.to_excel(writer, sheet_name='cfb_team_record', engine='xlsxwriter')
-        cfb_stats_per_game.to_excel(writer, sheet_name=' cfb_stats_per_game', engine='xlsxwriter')
-        cfb_all_data.to_excel(writer, sheet_name='cfb_all_data', engine='xlsxwriter')
+def insert_data_to_sqlite(data_table_name,df_data):
+    conn = sqlite3.connect('blitzanalytics.db')
+    if 'timestamp' not in df_data.columns:
+        df_data['timestamp'] = timestamp
+    df_cfbd_data.to_sql(cfb_table_name, conn, if_exists='append', index=False)
+    conn.close()

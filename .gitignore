@@ -131,6 +131,5 @@ dmypy.json
 #Local files
 api_files
 reports
-cfb.xlsx
 blitzanalytics.db
 
