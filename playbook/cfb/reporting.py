@@ -3,28 +3,27 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
-from . import load
-
+from playbook.cfb import load
 
 cwd = os.getcwd()
 file_path_cfb = cwd
 
-def matchups(reporting_year, reporting_week):
+def matchups(reporting_year, reporting_week, report_season_type):
     print('Generating Reports for current week of the year')
 
-    file_path_cfb_reports = cwd + '/reports/'
+    file_path_cfb_reports = cwd + '/reports/cfb/'
     file_path_cfb_reports_reporting_year = file_path_cfb_reports + str(reporting_year) + '/'
-    file_path_cfb_reports_reporting_year_week = file_path_cfb_reports_reporting_year + 'Week_' + str(reporting_week) + '/'
+    file_path_cfb_reports_reporting_year_week_season_type = file_path_cfb_reports_reporting_year + str(report_season_type) + '/'
+    file_path_cfb_reports_reporting_year_week = file_path_cfb_reports_reporting_year_week_season_type + 'Week_' + str(reporting_week) + '/'
 
-    cfb_season_week_matchups = load.sqlite_query_table('reporting_cfb_season_week_matchups')
-    cfb_all_data = load.sqlite_query_table('reporting_cfb_all_data')
-    cfb_team_info = load.sqlite_query_table('reporting_team_info')
-    cfb_summary = load.sqlite_query_table('reporting_cfb_summary')
-    cfb_season_stats_by_season = load.sqlite_query_table('reporting_cfb_season_stats_by_season')
+    cfb_season_week_matchups = load.sqlite_query_table('cfb_reporting_season_week_matchups')
+    cfb_all_data = load.sqlite_query_table('cfb_reporting_all_data')
+    cfb_team_info = load.sqlite_query_table('cfb_reporting_team_info')
+    cfb_summary = load.sqlite_query_table('cfb_reporting_summary')
+    cfb_season_stats_by_season = load.sqlite_query_table('cfb_reporting_season_stats_by_season')
 
-    #df_cfb_for_reporting_game_matchup = cfb_season_week_matchups.loc[cfb_season_week_matchups['season'].astype(str).str.contains(str(reporting_year), regex=False, case=False, na=False)]
     df_cfb_for_reporting_game_matchup = cfb_season_week_matchups.loc[cfb_season_week_matchups['season'] == str(reporting_year)]
-    df_cfb_for_reporting_game_matchup_reporting_week = df_cfb_for_reporting_game_matchup.loc[df_cfb_for_reporting_game_matchup['week'] == int(reporting_week)]
+    df_cfb_for_reporting_game_matchup_reporting_week = df_cfb_for_reporting_game_matchup.loc[(df_cfb_for_reporting_game_matchup['week'] == int(reporting_week)) & (df_cfb_for_reporting_game_matchup['season_type'] == str(report_season_type))]
     cfb_all_data_reporting_year = cfb_all_data.loc[cfb_all_data['season'] == str(reporting_year)]
 
     for index, row in df_cfb_for_reporting_game_matchup_reporting_week.iterrows():
@@ -50,15 +49,24 @@ def matchups(reporting_year, reporting_week):
         df_cfb_season_stats_by_season_home_away_append.sort_values(by=['season','team'], inplace=True, ascending=False)
 
         #Create DF for Matchup Summary
-        df_matchup_home_away_all_data_sel_col = df_matchup_home_away_all_data[['Game Matchup', 'team', 'AP Top 25', 'season',
+        df_matchup_home_away_all_data_sel_col = df_matchup_home_away_all_data[['Game Matchup', 'team', 'AP Top 25', 'season', 'season_type',
                                                             'week', 'start_date', 'conference_game']]
+
+        condition_matchup_summary = (
+                (df_matchup_home_away_all_data_sel_col['season'] == str(reporting_year)) &
+                (df_matchup_home_away_all_data_sel_col['week'] == int(reporting_week)) &
+                (df_matchup_home_away_all_data_sel_col['season_type'] == str(report_season_type))
+        )
+
+        df_matchup_summary = df_matchup_home_away_all_data_sel_col.loc[condition_matchup_summary]
+        '''
         df_matchup_summary = df_matchup_home_away_all_data_sel_col.loc[
             df_matchup_home_away_all_data_sel_col['season'] == str(reporting_year)].loc[
-            df_matchup_home_away_all_data_sel_col['week'] == int(reporting_week)]
-
+            (df_matchup_home_away_all_data_sel_col['week'] == int(reporting_week)) & (df_cfb_for_reporting_game_matchup['season_type'] == str(report_season_type))]
+        '''
         #Create DF for Matchup Summary Current Season Table
         df_matchup_home_away_all_data_current_season_sel_col = df_matchup_home_away_all_data_current_season[[
-            'team', 'season', 'week', 'conference_game', 'home_vs_away', 'points', 'home_team', 'home_points',
+            'team', 'season', 'season_type', 'week', 'conference_game', 'home_vs_away', 'points', 'home_team', 'home_points',
             'home_line_scores', 'away_team', 'away_points', 'away_line_scores']]
 
         #Create DF additional Matchup Summary High Level Stats Info
@@ -66,8 +74,7 @@ def matchups(reporting_year, reporting_week):
                                                            'home_points_season_mean', 'away_points_season_mean',
                                                            'epa_per_game_offense_overall_avg_per_season',
                                                            'epa_per_game_offense_overall_avg_per_season']].reset_index()
-        df_cfb_summary_matchup_reporting_year = df_cfb_summary_home_away_append_sel_col.loc[
-            df_cfb_summary_home_away_append_sel_col['season'] == str(reporting_year)]
+        df_cfb_summary_matchup_reporting_year = df_cfb_summary_home_away_append_sel_col
 
         #Create figure for Matchup Summary Tables
         fig_df_matchup_summary = plt.figure("fig_matchup_summary", figsize=(10, 5))
