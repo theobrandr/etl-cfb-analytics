@@ -5,8 +5,13 @@ from datetime import date
 from datetime import datetime
 
 def nfl_espn():
-    print("blitzanalytics: Your Playbook to Success through NFL Football Data ETL's and Reporting.")
-    extract.nfl_teams()
-    extract.nfl_scoreboard()
-    extract.nfl_athletes()
-    extract.nfl_team_stats()
+    print("blitzanalytics: NFL Football Data ETL's and Reporting running.")
+    extract.espn_nfl_teams()
+    extract.espn_nfl_team_roster()
+    extract.espn_nfl_scoreboard()
+    #extract.espn_nfl_athletes()
+    extract.espn_nfl_team_stats()
+    #extract.espn_nfl_athlete_stats()
+    extract.espn_nfl_team_roster_stats()
+
+

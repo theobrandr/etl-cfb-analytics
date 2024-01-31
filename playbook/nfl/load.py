@@ -24,3 +24,17 @@ def insert_data_to_sqlite(data_table_name,df_data):
         df_data['timestamp'] = timestamp
     df_data.to_sql(data_table_name, conn, if_exists='append', index=False)
     conn.close()
+
+def insert_data_to_sqlite_append(data_table_name,df_data):
+    conn = sqlite3.connect('blitzanalytics.db')
+    if 'timestamp' not in df_data.columns:
+        df_data['timestamp'] = timestamp
+    df_data.to_sql(data_table_name, conn, if_exists='append', index=False)
+    conn.close()
+
+def insert_data_to_sqlite_replace(data_table_name,df_data):
+    conn = sqlite3.connect('blitzanalytics.db')
+    if 'timestamp' not in df_data.columns:
+        df_data['timestamp'] = timestamp
+    df_data.to_sql(data_table_name, conn, if_exists='replace', index=False)
+    conn.close()
