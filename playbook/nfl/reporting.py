@@ -51,3 +51,9 @@ def espn_figure_teams_cat_scores_long_table():
                    align='left'))
     ])
     fig.show()
+
+def espn_export_to_csv():
+    df_espn_nfl_teams_stats_sql = playbook.nfl.load.sqlite_query_table('nfl_extract_team_stats')
+    df_espn_nfl_teams_stats_sql.drop(['results.opponent', 'team.logo'], axis=1)
+    df_espn_nfl_teams_stats_sql_loc = df_espn_nfl_teams_stats_sql.loc[df_espn_nfl_teams_stats_sql['team.name'] == 'Chiefs']
+    df_espn_nfl_teams_stats_sql_loc.to_csv("nfl_extract_team_stats.csv")
