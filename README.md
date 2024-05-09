@@ -1,15 +1,12 @@
 # Blitzanalytics
-Your Playbook to Success through Sports Data ETL's and Reporting.
-The progrma will extract 5 years of sports data, transform the data, load the data into a local database, and automatically generate reports.  
+Your Playbook to Success through College Football Data ETL's and Reporting.
+The progrmam will extract 5 years of college football/cfb data, transform the data, load the data into a local database, and automatically generate reports.  
 
 **Program Status**
 <br>
 - [100%] College Football Data 
 - [100%] College Football Matchup Reporting
 - [0%] College Football Team Reporting
-- [10%] National Football League Data
-- [0%] National Football League Matchup Reporting
-- [0%] National Football League Team Reporting
 
 **Requirements**
 <br>
@@ -25,13 +22,10 @@ The progrma will extract 5 years of sports data, transform the data, load the da
 
 **Usage**
 <br>
-  blitanalytics.py -cfb
+  blitanalytics.py
 
 **Program Arguments***
-  python script_name.py [-cfb] [-nfl] [-p] [-r REPORT_WEEK] [-y REPORT_YEAR] [-t] [-d] [-s]
-  
-  -cfb, --college_football: Fetch data related to College Football.
-  -nfl, --nfl_football: Fetch data related to NFL Football.
+  python blitzanalytics.py [-p] [-r REPORT_WEEK] [-y REPORT_YEAR] [-t] [-d] [-s]
   -p, --previous_years: Pull data for the last 5 years. By default, only the current year's data will be pulled.
   -r REPORT_WEEK, --report_week REPORT_WEEK: Specify a week for reporting. The default week is the current week.
   -y REPORT_YEAR, --report_year REPORT_YEAR: Specify a year for reporting. The default year is the current year.
@@ -40,8 +34,8 @@ The progrma will extract 5 years of sports data, transform the data, load the da
   -s, --skip_extract: Skip the data extraction process if new data isn't required.
 
   Examples:
-  python script_name.py -cfb -p
-  python script_name.py -cfb -y 2023 -w 3 -t regular
+  python blitzanalytics.py -p
+  python blitzanalytics.py -y 2023 -w 3 -t regular
 
 
 **.ENV file**
@@ -65,4 +59,4 @@ The progrma will extract 5 years of sports data, transform the data, load the da
   - EPA per Game
   - Odds/Spread per Game
 
-**National Football League**
+
