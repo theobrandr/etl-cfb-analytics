@@ -6,7 +6,7 @@ from datetime import datetime
 import dotenv
 import sqlite3
 import pandas as pd
-from playbook.cfb.pregame import timestamp
+from playbook.pregame import timestamp
 
 #Load Enviroment Variables
 dotenv.load_dotenv()
@@ -179,13 +179,17 @@ def cfbd_fbs_season_games(years):
         remove_duplicate_data_with_id_sqlite('cfb_extract_season_games')
 
 def cfbd_team_records(years):
+    # Create blank dataframe
     for year in years:
         request_url = str(cfb_url + str('records?year=' + str(year)))
         response_json = cfbd_api_request(request_url)
         df_cfbd_data_original = default_json_to_df(response_json)
         df_cfbd_data = df_cfbd_data_original.rename(columns={"year": "season"})
-        insert_cfbd_to_sqlite('cfb_extract_team_records', df_cfbd_data)
-        remove_duplicate_data_with_team_and_year_sqlite('cfb_extract_team_records')
+        if df_cfbd_data.empty:
+            continue
+        else:
+            insert_cfbd_to_sqlite('cfb_extract_team_records', df_cfbd_data)
+            remove_duplicate_data_with_team_and_year_sqlite('cfb_extract_team_records')
 
 def cfbd_season_stats(years):
     for year in years:
@@ -201,38 +205,50 @@ def cfbd_rankings(years):
         response_json = cfbd_api_request(request_url)
         df_cfbd_data_normalized = pd.json_normalize(response_json, record_path=['polls', 'ranks'],
                                                           meta=['week', 'season', ['polls', 'poll']], errors='ignore')
-        df_cfbd_data_normalized = df_cfbd_data_normalized[["polls.poll", "week", "rank", "school", "season"]]
-        df_cfbd_data_normalized = df_cfbd_data_normalized.rename(columns={"polls.poll": "Poll Name"})
-        df_cfbd_data = df_cfbd_data_normalized.pivot_table(index=['week', 'school', 'season'], columns=['Poll Name'],
-                                                            values='rank').reset_index()
-        df_cfbd_data['timestamp'] = timestamp
-        column_name = 'Playoff Committee Rankings'
-        if column_name not in df_cfbd_data.columns:
-            df_cfbd_data['Playoff Committee Rankings'] = ''
-        insert_cfbd_to_sqlite('cfb_extract_rankings', df_cfbd_data)
-        remove_duplicate_data_with_team_year_week_sqlite('cfb_extract_rankings')
+        if df_cfbd_data_normalized.empty:
+            continue
+        else:
+            df_cfbd_data_normalized = df_cfbd_data_normalized[["polls.poll", "week", "rank", "school", "season"]]
+            df_cfbd_data_normalized = df_cfbd_data_normalized.rename(columns={"polls.poll": "Poll Name"})
+            df_cfbd_data = df_cfbd_data_normalized.pivot_table(index=['week', 'school', 'season'], columns=['Poll Name'],
+                                                                values='rank').reset_index()
+            df_cfbd_data['timestamp'] = timestamp
+            column_name = 'Playoff Committee Rankings'
+            if column_name not in df_cfbd_data.columns:
+                df_cfbd_data['Playoff Committee Rankings'] = ''
+            insert_cfbd_to_sqlite('cfb_extract_rankings', df_cfbd_data)
+            remove_duplicate_data_with_team_year_week_sqlite('cfb_extract_rankings')
 
 def cfbd_epa(years):
     for year in years:
         request_url = str(cfb_url + str('ppa/games?year=' + str(year) + '&seasonType=regular'))
         response_json = cfbd_api_request(request_url)
         df_cfbd_data = default_json_to_df(response_json)
-        insert_cfbd_to_sqlite('cfb_extract_epa', df_cfbd_data)
-        remove_duplicate_data_with_gameid_sqlite('cfb_extract_epa')
+        if df_cfbd_data.empty:
+            continue
+        else:
+            insert_cfbd_to_sqlite('cfb_extract_epa', df_cfbd_data)
+            remove_duplicate_data_with_gameid_sqlite('cfb_extract_epa')
 
 def cfbd_odds_per_game(years):
     for year in years:
         request_url = str(cfb_url + str('metrics/wp/pregame?year=' + str(year) + '&seasonType=regular'))
         response_json = cfbd_api_request(request_url)
         df_cfbd_data = default_json_to_df(response_json)
-        insert_cfbd_to_sqlite('cfb_extract_odds_per_game', df_cfbd_data)
-        remove_duplicate_data_with_gameid_sqlite('cfb_extract_odds_per_game')
+        if df_cfbd_data.empty:
+            continue
+        else:
+            insert_cfbd_to_sqlite('cfb_extract_odds_per_game', df_cfbd_data)
+            remove_duplicate_data_with_gameid_sqlite('cfb_extract_odds_per_game')
 
 def cfbd_stats_per_game(years):
     for year in years:
         request_url = str(cfb_url + str('stats/game/advanced?year=' + str(year)))
         response_json = cfbd_api_request(request_url)
         df_cfbd_data = default_json_to_df(response_json)
-        df_cfbd_data['season'] = year
-        insert_cfbd_to_sqlite('cfb_extract_stats_per_game', df_cfbd_data)
-        remove_duplicate_data_with_gameid_sqlite('cfb_extract_stats_per_game')
+        if df_cfbd_data.empty:
+            continue
+        else:
+            df_cfbd_data['season'] = year
+            insert_cfbd_to_sqlite('cfb_extract_stats_per_game', df_cfbd_data)
+            remove_duplicate_data_with_gameid_sqlite('cfb_extract_stats_per_game')

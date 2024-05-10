@@ -167,6 +167,11 @@ def games_and_stats():
 def games_and_aggregate_scores():
     print('Transforming Home and Away Aggregate Scores')
     df_cfb_season_games_all = sqlite_query_table_by_year('cfb_extract_season_games')
+    columns_to_check = df_cfb_season_games_all.drop(['notes', 'highlights'], axis=1).columns
+    columns_with_none = columns_to_check[df_cfb_season_games_all[columns_to_check].isna().any()]
+    df_cfb_season_games_all[columns_with_none] = df_cfb_season_games_all[columns_with_none].fillna(0)
+    df_cfb_season_games_all[columns_with_none] = df_cfb_season_games_all[columns_with_none].astype('float32')
+    df_cfb_season_games_all['season'] = df_cfb_season_games_all['season'].astype(int)
 
     #Transform average scores for home and away
     #Transform Home game scores
@@ -192,6 +197,11 @@ def odds():
     print('Transforming Odds/Spread')
     df_cfb_odds_per_game_all = sqlite_query_table_by_year('cfb_extract_odds_per_game')
     df_cfb_season_games_all = sqlite_query_table_by_year('cfb_extract_season_games')
+    columns_to_check = df_cfb_season_games_all.drop(['notes', 'highlights'], axis=1).columns
+    columns_with_none = columns_to_check[df_cfb_season_games_all[columns_to_check].isna().any()]
+    df_cfb_season_games_all[columns_with_none] = df_cfb_season_games_all[columns_with_none].fillna(0)
+    df_cfb_season_games_all[columns_with_none] = df_cfb_season_games_all[columns_with_none].astype('float32')
+    df_cfb_season_games_all['season'] = df_cfb_season_games_all['season'].astype(int)
 
     #Transform odds per game
     #Prep the odds data
@@ -524,7 +534,7 @@ def prep_data_for_reporting():
             df_cfb_season_games_all_updated_join_odds[col].fillna("No Data", inplace=True)
 
     #CFB Games/Matchups by Season and Week
-    df_cfb_season_games_all['season'] = df_cfb_season_games_all['season'].astype(str)
+    df_cfb_season_games_all['season'] = df_cfb_season_games_all['season'].astype(int)
     cfb_season_week_matchups = df_cfb_season_games_all
     cfb_season_week_matchups_home_updated = df_cfb_season_games_all_updated
 
@@ -553,7 +563,9 @@ def prep_data_for_reporting():
     cfb_matchup_with_stats_per_game = cfb_matchup_with_stats_per_game.fillna(0)
 
     #CFB All Data
+    df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'] = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'].astype(int)
     df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'] = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'].astype(str)
+
     cfb_all_data = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame
     cfb_all_data = cfb_all_data.fillna(0)
 

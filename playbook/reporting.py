@@ -3,14 +3,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
-from playbook.cfb import load
+from playbook import load
 
 cwd = os.getcwd()
 file_path_cfb = cwd
 
 def matchups(reporting_year, reporting_week, report_season_type):
     print('Generating Reports for current week of the year')
-
+    reporting_year = str(reporting_year)
     file_path_cfb_reports = cwd + '/reports/cfb/'
     file_path_cfb_reports_reporting_year = file_path_cfb_reports + str(reporting_year) + '/'
     file_path_cfb_reports_reporting_year_week_season_type = file_path_cfb_reports_reporting_year + str(report_season_type) + '/'
@@ -22,7 +22,7 @@ def matchups(reporting_year, reporting_week, report_season_type):
     cfb_summary = load.sqlite_query_table('cfb_reporting_summary')
     cfb_season_stats_by_season = load.sqlite_query_table('cfb_reporting_season_stats_by_season')
 
-    df_cfb_for_reporting_game_matchup = cfb_season_week_matchups.loc[cfb_season_week_matchups['season'] == str(reporting_year)]
+    df_cfb_for_reporting_game_matchup = cfb_season_week_matchups[cfb_season_week_matchups['season'].astype(str).str.contains(reporting_year)]
     df_cfb_for_reporting_game_matchup_reporting_week = df_cfb_for_reporting_game_matchup.loc[(df_cfb_for_reporting_game_matchup['week'] == int(reporting_week)) & (df_cfb_for_reporting_game_matchup['season_type'] == str(report_season_type))]
     cfb_all_data_reporting_year = cfb_all_data.loc[cfb_all_data['season'] == str(reporting_year)]
 

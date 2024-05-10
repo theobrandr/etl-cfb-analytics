@@ -40,7 +40,6 @@ def filepath_check(arg_report_year):
     cwd = os.getcwd()
     file_env = dotenv.find_dotenv()
     file_path_sport = cwd
-    file_path_sport_api = cwd + '/api_files/'
     file_path_sport_reports = cwd + '/reports/'
     file_path_sport_reports_cfb = file_path_sport_reports + 'cfb/'
     file_path_sport_reports_report_year = file_path_sport_reports_cfb + str(report_year) + '/'
@@ -48,7 +47,6 @@ def filepath_check(arg_report_year):
     file_path_sport_reports_report_year_regular_season = file_path_sport_reports_report_year + str('regular') + '/'
     file_path_sport_reports_report_year_post_season = file_path_sport_reports_report_year + str('postseason') + '/'
 
-    check_api_folder = os.path.exists(file_path_sport_api)
     check_reports_folder = os.path.exists(file_path_sport_reports)
     check_reports_folder_cfb = os.path.exists(file_path_sport_reports_cfb)
     check_reports_folder_report_year = os.path.exists(file_path_sport_reports_report_year)
@@ -56,12 +54,6 @@ def filepath_check(arg_report_year):
     check_reports_folder_report_year_regular_season = os.path.exists(file_path_sport_reports_report_year_regular_season)
     check_reports_folder_report_year_post_season = os.path.exists(file_path_sport_reports_report_year_post_season)
 
-    def filepath_api_check():
-        if check_api_folder == True:
-            return()
-        elif check_api_folder == False:
-            os.mkdir(file_path_sport_api)
-            return()
     def filepath_reports_check():
         if check_reports_folder == True:
             return()
@@ -135,8 +127,6 @@ def filepath_check(arg_report_year):
                 os.mkdir(path_reports_folder_report_year_post_season_week)
                 continue
 
-
-    filepath_api_check()
     filepath_reports_check()
     filepath_reports_cfb_check()
     filepath_reports_report_year_check()
@@ -210,13 +200,37 @@ def cfbd_api_request(cfbd_request_url):
 
 
 
-def cfbd_season_calendar(arg_report_year, arg_report_week, arg_previous_years, season_type):
+def cfbd_season_calendar(arg_report_year, arg_report_week, arg_previous_years, arg_season_type):
     report_week = arg_report_week
     report_year = arg_report_year
-    report_season_type = season_type
+    report_season_type = arg_season_type
     request_url = str(cfb_url + str('calendar?year=') + str(report_year))
     response_json = cfbd_api_request(request_url)
 
+
+    team_records_request_url = str(cfb_url + str('records?year=' + str(report_year)))
+    team_records_response_json = cfbd_api_request(team_records_request_url)
+    if len(team_records_response_json) == 0:
+        report_year = (current_year - 1)
+        print("Reporting year selected contains no data. Generating a report using the most recent data instead")
+    else:
+        report_year = current_year
+
+    request_url = str(cfb_url + str('calendar?year=') + str(report_year))
+    response_json = cfbd_api_request(request_url)
+
+    filtered_data = [game for game in response_json if (game['seasonType'] == 'postseason' and game['week'] == 1 or (game['seasonType'] == 'regular'))]
+
+    for item in filtered_data:
+        item['lastGameStart'] = datetime.strptime(item['lastGameStart'], '%Y-%m-%dT%H:%M:%S.%fZ')
+    current_datetime = datetime.utcnow()
+    closest_date = min(filtered_data, key=lambda x: abs(x['lastGameStart'] - current_datetime))
+    closest_last_game_start = closest_date['lastGameStart']
+    report_week = closest_date['week']
+    report_year = closest_date['season']
+    report_season_type = closest_date['seasonType']
+
+    '''
     if not response_json:
         report_year = (current_year-1)
         request_url = str(cfb_url + str('calendar?year=') + str(report_year))
@@ -236,17 +250,18 @@ def cfbd_season_calendar(arg_report_year, arg_report_week, arg_previous_years, s
         print("Reporting year selected contains no data. Generating a report using the most recent data instead")
 
     elif response_json:
-        filtered_data = [game for game in response_json if (
-                game['seasonType'] == 'postseason' and game['week'] == 1 or (game['seasonType'] == 'regular'))]
-        for item in filtered_data:
-            item['lastGameStart'] = datetime.strptime(item['lastGameStart'], '%Y-%m-%dT%H:%M:%S.%fZ')
-        current_datetime = datetime.utcnow()
-        closest_date = min(filtered_data, key=lambda x: abs(x['lastGameStart'] - current_datetime))
-        closest_last_game_start = closest_date['lastGameStart']
-        report_week = closest_date['week']
-        report_year = closest_date['season']
-        report_season_type = closest_date['seasonType']
-
+ 
+    filtered_data = [game for game in response_json if (
+            game['seasonType'] == 'postseason' and game['week'] == 1 or (game['seasonType'] == 'regular'))]
+    for item in filtered_data:
+        item['lastGameStart'] = datetime.strptime(item['lastGameStart'], '%Y-%m-%dT%H:%M:%S.%fZ')
+    current_datetime = datetime.utcnow()
+    closest_date = min(filtered_data, key=lambda x: abs(x['lastGameStart'] - current_datetime))
+    closest_last_game_start = closest_date['lastGameStart']
+    report_week = closest_date['week']
+    report_year = closest_date['season']
+    report_season_type = closest_date['seasonType']
+   '''
     if arg_previous_years:
         years_to_pull = list(range(int(report_year), int(report_year) - 5, -1))
     else:
