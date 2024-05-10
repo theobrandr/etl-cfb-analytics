@@ -1,6 +1,6 @@
 # Blitzanalytics
 Your Playbook to Success through College Football Data ETL's and Reporting.
-The progrmam will extract 5 years of college football/cfb data, transform the data, load the data into a local database, and automatically generate reports.  
+The program will extract 5 years of college football/cfb data, transform the data, load the data into a local database, and automatically generate reports.  
 
 **Program Status**
 <br>
