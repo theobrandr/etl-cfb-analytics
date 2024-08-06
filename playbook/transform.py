@@ -41,12 +41,13 @@ def insert_cfbd_to_sqlite(cfb_table_name,df_cfbd_data):
     df_cfbd_data.to_sql(cfb_table_name, conn, if_exists='replace', index=False)
     conn.close()
 
-def season_stats(years):
+def season_stats():
     print('Transforming Season Stats')
-    df_season_stats = sqlite_query_table('cfb_extract_season_stats')
+    df_season_stats = sqlite_query_table_by_year('cfb_extract_season_stats')
 
     # Convert list to df with pivot table
     df_cfb_season_stats_all_original = df_season_stats.pivot(index=['team', 'season'], columns='statName', values='statValue').reset_index()
+
     #Rename the columns based on offense/defense/special teams
     df_cfb_season_stats_all_original.rename(columns = lambda col: f"offense_{col}"
                                                     if col in ("possessionTime", "firstDowns", "fourthDownConversions", "fourthDowns", "fumblesLost", "passAttempts",
@@ -59,10 +60,14 @@ def season_stats(years):
     df_cfb_season_stats_all_original.rename(columns=lambda col: f"specialteams_{col}"
                                                     if col in ("kickReturnTDs", "kickReturnYards", "kickReturns", "puntReturnTDs", "puntReturnYards", "puntReturns")
                                                     else col, inplace=True)
-    df_cfb_season_stats_all_for_loop = df_cfb_season_stats_all_original.copy()
+    df_cfb_season_stats_all_original_fillna = df_cfb_season_stats_all_original.fillna(0)
+
+    df_cfb_years_to_transform = df_cfb_season_stats_all_original_fillna.groupby('season').size().reset_index(name='Count')
+    years_to_transform = df_cfb_years_to_transform['season'].tolist()
+
     list_df_cfb_season_stats_all_for_loop_by_year = []
-    for year in years:
-        df_cfb_season_stats_all_for_loop = df_cfb_season_stats_all_original.loc[df_cfb_season_stats_all_original['season'].astype(str).str.contains(str(year))]
+    for year in years_to_transform:
+        df_cfb_season_stats_all_for_loop = df_cfb_season_stats_all_original_fillna.loc[df_cfb_season_stats_all_original_fillna['season'].astype(str).str.contains(str(year))]
         #Calculate Offense Stats
         #Possession Time
         df_cfb_season_stats_all_for_loop['offense_possessionTime_zscore'] = (df_cfb_season_stats_all_for_loop['offense_possessionTime'] - df_cfb_season_stats_all_for_loop['offense_possessionTime'].mean()) / df_cfb_season_stats_all_for_loop['offense_possessionTime'].std()
@@ -369,32 +374,19 @@ def team_info():
     #Insert the transformed data into the DB
     insert_cfbd_to_sqlite('cfb_reporting_team_info', df_cfb_team_info_updated)
 
+def schedule():
+    df_cfb_schedule = sqlite_query_table('cfb_extract_schedule')
+    df_cfb_schedule_loc = df_cfb_schedule.loc[
+        ((df_cfb_schedule['seasonType'] == 'postseason') & (df_cfb_schedule['week'] == 1)) |
+        (df_cfb_schedule['seasonType'] == 'regular')
+        ]
+    df_cfb_schedule_loc['lastGameStart'] = pd.to_datetime(df_cfb_schedule_loc['lastGameStart']).dt.strftime('%Y-%m-%d %H:%M:%S')
+    df_cfb_schedule_loc['firstGameStart'] = pd.to_datetime(df_cfb_schedule_loc['firstGameStart']).dt.strftime('%Y-%m-%d %H:%M:%S')
+    #Insert the transformed data into the DB
+    insert_cfbd_to_sqlite('cfb_reporting_schedule', df_cfb_schedule_loc)
 
-def reporting_week(arg_report_week):
-    print('Calculating reporting week')
-    df_cfb_season_games_all = sqlite_query_table_by_year('cfb_transform_season_games_stats_all')
-    date_today = datetime.combine(date.today(), datetime.min.time())
-    date_today_day = date.today().strftime('%A')
 
-    df_cfb_date_group_bys = df_cfb_season_games_all.groupby(['season', 'week'])['date'].last().reset_index()
-
-    df_cfb_date_group_bys['date'] = pd.to_datetime(df_cfb_date_group_bys['date'])
-
-    date_compare = (df_cfb_date_group_bys["date"].shift() < date_today) & (df_cfb_date_group_bys["date"] > date_today)
-    df_date_compare_result = df_cfb_date_group_bys[date_compare]
-    current_week = df_date_compare_result['week'].to_string(index=False)
-    return (current_week)
-
-def reporting_year(arg_report_year):
-    print('Calculating reporting year')
-    if arg_report_year is not None:
-        report_year = arg_report_year
-        return (report_year)
-    else:
-        report_year = date.today().year
-        return (report_year)
-
-def combine_data_for_summary(reporting_year):
+def combine_data_for_summary():
     print('Transforming Summary Dataset')
     # CFB Seasons Stats zscores for summary
     df_cfb_season_stats_all = sqlite_query_table('cfb_transform_season_stats')
@@ -402,7 +394,7 @@ def combine_data_for_summary(reporting_year):
     df_cfb_team_record_all_select_col = sqlite_query_table('cfb_transform_team_record')
     df_cfb_ranking_groupby_ap = sqlite_query_table('cfb_transform_rankings_groupby_ap')
     df_cfb_epa_per_season_for_summary = sqlite_query_table('cfb_transform_epa_per_season_for_summary')
-
+    df_cfb_schedule = sqlite_query_table('cfb_reporting_schedule')
 
     df_cfb_season_stats_zscores_for_summary = df_cfb_season_stats_all[[
         'team', 'season', 'games', 'offense_plus_zscore_sum', 'offense_minus_zscore_sum', 'offense_zscore_final',
@@ -436,10 +428,17 @@ def combine_data_for_summary(reporting_year):
                                                             right_on=['team', 'season'], how='left')
     cfb_summary_all_joins = cfb_summary_join_record_rank_agg_zscores_epa.sort_values(by=['team', 'season'], ascending=True, na_position='first')
 
+    df_cfb_summary_years = cfb_summary_all_joins.groupby('season').size().reset_index(name='Count')
+    cfb_summary_years_set = set(df_cfb_summary_years ['season'].tolist())
+    df_cfb_schedule_years = df_cfb_schedule.groupby('season').size().reset_index(name='Count')
+    cfb_schedule_years_set = set(df_cfb_schedule_years['season'].astype(int).tolist())
+
+    years_to_fill = cfb_schedule_years_set.difference(cfb_summary_years_set)
+
     cfb_summary_all_joins_loc = cfb_summary_all_joins.loc[
-        ~cfb_summary_all_joins['season'].astype(str).str.contains(str(reporting_year), regex=False, case=False, na=False)]
+        ~cfb_summary_all_joins['season'].astype(str).str.contains(str(years_to_fill), regex=False, case=False, na=False)]
     cfb_summary_all_joins_loc_groupby = cfb_summary_all_joins_loc.groupby('team')["season"].count().reset_index()
-    cfb_summary_all_joins_loc_groupby['season'] = str(reporting_year)
+    cfb_summary_all_joins_loc_groupby['season'] = str(years_to_fill)
     cfb_summary_all_joins_loc_groupby_merged = pd.concat([cfb_summary_all_joins, cfb_summary_all_joins_loc_groupby])
     cfb_summary_all_joins_loc_groupby_merged_fillna = cfb_summary_all_joins_loc_groupby_merged.fillna(0)
     cfb_summary_join_record_rank_agg_zscores_epa_sorted = cfb_summary_all_joins_loc_groupby_merged_fillna.sort_values(by=['team', 'season'], ascending=True, na_position='first')
@@ -562,15 +561,16 @@ def prep_data_for_reporting():
     cfb_matchup_with_stats_per_game = df_cfb_season_games_all_updated_join_stats_per_game
     cfb_matchup_with_stats_per_game = cfb_matchup_with_stats_per_game.fillna(0)
 
-    #CFB All Data
+    #CFB All Matchup Data
     df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'] = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'].astype(int)
     df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'] = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'].astype(str)
+    df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['points'] = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['points'].astype(int)
 
-    cfb_all_data = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame
-    cfb_all_data = cfb_all_data.fillna(0)
+    cfb_matchup_all_data_pre_na_fill = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame
+    cfb_matchup_all_data = cfb_matchup_all_data_pre_na_fill.fillna(0)
 
     # Insert the transformed data into the DB
-    insert_cfbd_to_sqlite('cfb_reporting_all_data', cfb_all_data)
+    insert_cfbd_to_sqlite('cfb_reporting_matchup_all_data', cfb_matchup_all_data)
     insert_cfbd_to_sqlite('cfb_reporting_games_with_spread_analytics', cfb_games_with_spread_analytics)
     insert_cfbd_to_sqlite('cfb_reporting_season_stats_by_season', cfb_season_stats_by_season)
     insert_cfbd_to_sqlite('cfb_reporting_season_week_matchups', cfb_season_week_matchups)

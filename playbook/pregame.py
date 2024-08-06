@@ -5,6 +5,7 @@ from datetime import datetime
 import sqlite3
 import requests
 import json
+import pandas as pd
 
 #Load Enviroment Variables
 dotenv.load_dotenv()
@@ -95,17 +96,6 @@ def filepath_check(arg_report_year):
             os.mkdir(file_path_sport_reports_report_year_post_season)
             return ()
 
-    def filepath_reports_report_year_weeks_check():
-        weeks = list(range(1, 16))
-        for week in weeks:
-            path_reports_folder_report_year_week = file_path_sport_reports_report_year + 'Week_' + str(week) + '/'
-            check_reports_folder_report_year_week = os.path.exists(str(path_reports_folder_report_year_week))
-            if check_reports_folder_report_year_week == True:
-                continue
-            elif check_reports_folder_report_year_week == False:
-                os.mkdir(path_reports_folder_report_year_week)
-                continue
-
     def filepath_reports_report_year_regular_season_weeks_check():
         weeks = list(range(1, 16))
         for week in weeks:
@@ -132,9 +122,8 @@ def filepath_check(arg_report_year):
     filepath_reports_report_year_check()
     filepath_reports_report_year_teams_check()
     filepath_reports_report_year_regular_season_check()
-    filepath_reports_report_year_post_season_check()
-    #filepath_reports_report_year_weeks_check()
     filepath_reports_report_year_regular_season_weeks_check()
+    filepath_reports_report_year_post_season_check()
     filepath_reports_report_year_post_season_weeks_check()
 
     return(print("Pregame Filepath Checks Complete"))
@@ -151,7 +140,7 @@ def api_key_check():
         ]
         exit('\n'.join(error_message))
 
-def check_sqllite_db():
+def check_sqllite_db_status():
     # Testing Connection to sqlite CFB.DB
     connection = sqlite3.connect("blitzanalytics.db")
     cursor = connection.cursor()
@@ -161,6 +150,78 @@ def check_sqllite_db():
     print('SQLite Version is {}'.format(result_sql_version_query))
     cursor.close()
     connection.close()
+
+def check_sqlite_logging():
+    conn = sqlite3.connect('blitzanalytics.db')
+    # Check if the table exists
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='blitzanalytics_log'")
+    table_exists = cursor.fetchone() is not None
+
+    if table_exists == False:
+        # Create the table if it doesn't exist
+        cursor.execute(f'''
+                    CREATE TABLE blitzanalytics_log (
+                        data_source TEXT,
+                        log_time TEXT,
+                        action TEXT
+                    )
+                ''')
+        conn.commit()
+        cursor.execute(
+            "INSERT INTO blitzanalytics_log (data_source, log_time, action) VALUES (?, ?, ?)",
+            ('cbfd', timestamp, 'Blitzanalytics Table Creation'))
+        conn.commit()
+        conn.close()
+
+    if table_exists == True:
+        cursor.execute(
+            "INSERT INTO blitzanalytics_log (data_source, log_time, action) VALUES (?, ?, ?)",
+            ('cbfd', timestamp, 'Blitzanalytics Pregame'))
+        conn.commit()
+        conn.close()
+
+def calculate_default_data_years():
+    default_current_year = date.today().year
+    default_years = [str(default_current_year - i) for i in range(5)]
+    return default_years, default_current_year
+
+def check_existing_sqlite_data(default_years):
+    conn = sqlite3.connect('blitzanalytics.db')
+    # Check if the table exists
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='cfb_reporting_all_data'")
+    table_exists = cursor.fetchone()
+    if table_exists:
+        # Query to count the number of records per season
+        query = """
+        SELECT season, COUNT(*) AS count
+        FROM cfb_reporting_all_data
+        GROUP BY season
+        ORDER BY season
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+        existing_data_years_set = set([row[0] for row in results])
+        default_years_set = set(default_years)
+        data_contains_all_default_years = default_years_set.issubset(existing_data_years_set)
+        return data_contains_all_default_years
+    else:
+        data_contains_all_default_years = False
+        return data_contains_all_default_years
+    conn.close()
+
+def sqlite_query_table(table_name):
+    conn = sqlite3.connect('blitzanalytics.db')
+    #query = f"SELECT * FROM {table_name}"
+    query = f"""
+        SELECT *
+        FROM {table_name}
+        WHERE timestamp = (SELECT MAX(timestamp) FROM {table_name} )
+        """
+    df_table = pd.read_sql_query(query, conn)
+    conn.close()
+    return df_table
 
 def delete_all_tables():
     print("Warning, this will delete all the tables in the CFB Database.")
@@ -183,7 +244,7 @@ def delete_all_tables():
                 print(table[0])
         conn.commit()
         cursor.execute("VACUUM;")
-        print("The database was vacummed vacuumed to reduce file size")
+        print("The database was vacuumed to reduce file size")
         conn.close()
 
     else:
@@ -199,72 +260,3 @@ def cfbd_api_request(cfbd_request_url):
     return response_json
 
 
-
-def cfbd_season_calendar(arg_report_year, arg_report_week, arg_previous_years, arg_season_type):
-    report_week = arg_report_week
-    report_year = arg_report_year
-    report_season_type = arg_season_type
-    request_url = str(cfb_url + str('calendar?year=') + str(report_year))
-    response_json = cfbd_api_request(request_url)
-
-
-    team_records_request_url = str(cfb_url + str('records?year=' + str(report_year)))
-    team_records_response_json = cfbd_api_request(team_records_request_url)
-    if len(team_records_response_json) == 0:
-        report_year = (current_year - 1)
-        print("Reporting year selected contains no data. Generating a report using the most recent data instead")
-    else:
-        report_year = current_year
-
-    request_url = str(cfb_url + str('calendar?year=') + str(report_year))
-    response_json = cfbd_api_request(request_url)
-
-    filtered_data = [game for game in response_json if (game['seasonType'] == 'postseason' and game['week'] == 1 or (game['seasonType'] == 'regular'))]
-
-    for item in filtered_data:
-        item['lastGameStart'] = datetime.strptime(item['lastGameStart'], '%Y-%m-%dT%H:%M:%S.%fZ')
-    current_datetime = datetime.utcnow()
-    closest_date = min(filtered_data, key=lambda x: abs(x['lastGameStart'] - current_datetime))
-    closest_last_game_start = closest_date['lastGameStart']
-    report_week = closest_date['week']
-    report_year = closest_date['season']
-    report_season_type = closest_date['seasonType']
-
-    '''
-    if not response_json:
-        report_year = (current_year-1)
-        request_url = str(cfb_url + str('calendar?year=') + str(report_year))
-        response_json = cfbd_api_request(request_url)
-
-        filtered_data = [game for game in response_json if (
-                    game['seasonType'] == 'postseason' and game['week'] == 1 or (game['seasonType'] == 'regular'))]
-
-        for item in filtered_data:
-            item['lastGameStart'] = datetime.strptime(item['lastGameStart'], '%Y-%m-%dT%H:%M:%S.%fZ')
-        current_datetime = datetime.utcnow()
-        closest_date = min(filtered_data, key=lambda x: abs(x['lastGameStart'] - current_datetime))
-        closest_last_game_start = closest_date['lastGameStart']
-        report_week = closest_date['week']
-        report_year = closest_date['season']
-        report_season_type = closest_date['seasonType']
-        print("Reporting year selected contains no data. Generating a report using the most recent data instead")
-
-    elif response_json:
- 
-    filtered_data = [game for game in response_json if (
-            game['seasonType'] == 'postseason' and game['week'] == 1 or (game['seasonType'] == 'regular'))]
-    for item in filtered_data:
-        item['lastGameStart'] = datetime.strptime(item['lastGameStart'], '%Y-%m-%dT%H:%M:%S.%fZ')
-    current_datetime = datetime.utcnow()
-    closest_date = min(filtered_data, key=lambda x: abs(x['lastGameStart'] - current_datetime))
-    closest_last_game_start = closest_date['lastGameStart']
-    report_week = closest_date['week']
-    report_year = closest_date['season']
-    report_season_type = closest_date['seasonType']
-   '''
-    if arg_previous_years:
-        years_to_pull = list(range(int(report_year), int(report_year) - 5, -1))
-    else:
-        years_to_pull = [report_year]
-
-    return report_year, report_week, years_to_pull, report_season_type

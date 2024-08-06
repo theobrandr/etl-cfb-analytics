@@ -136,16 +136,26 @@ def insert_cfbd_to_sqlite(cfb_table_name,df_cfbd_data):
     df_cfbd_data.to_sql(cfb_table_name, conn, if_exists='append', index=False)
     conn.close()
 
+def cfbd_schedule(years):
+    print("Extracting CFBD Schedule")
+    for year in years:
+        request_url = str(cfb_url + str('calendar?year=') + str(year))
+        response_json = cfbd_api_request(request_url)
+        df_cfbd_data = default_json_to_df(response_json)
+        insert_cfbd_to_sqlite('cfb_extract_schedule', df_cfbd_data)
+        remove_duplicate_data_timestamp_only_sqlite('cfb_extract_schedule')
+
 def cfbd_team_info():
+    print("Extracting CFBD Team Info")
     request_url = str(cfb_url + str('teams'))
     response_json = cfbd_api_request(request_url)
     df_cfbd_data = default_json_to_df(response_json)
-    df_cfbd_data['timestamp'] = timestamp
     df_cfbd_data['logos'] = df_cfbd_data['logos'].astype(str)
     insert_cfbd_to_sqlite('cfb_extract_team_info', df_cfbd_data)
     remove_duplicate_data_timestamp_only_sqlite('cfb_extract_team_info')
 
 def cfbd_venue_info():
+    print("Extracting CFBD Venue Info")
     request_url = str(cfb_url + str('venues'))
     response_json = cfbd_api_request(request_url)
     df_cfbd_data = default_json_to_df(response_json)
@@ -153,6 +163,7 @@ def cfbd_venue_info():
     remove_duplicate_data_timestamp_only_sqlite('cfb_extract_venue_info')
 
 def cfbd_coach_info():
+    print("Extracting CFBD Coach Info")
     request_url = str(cfb_url + str('coaches?minYear=2010'))
     response_json = cfbd_api_request(request_url)
     df_cfbd_data = pd.json_normalize(response_json, record_path=['seasons'], meta=['first_name', 'last_name'],
@@ -162,6 +173,7 @@ def cfbd_coach_info():
     remove_duplicate_data_timestamp_only_sqlite('cfb_extract_coach_info')
 
 def cfbd_fbs_season_games(years):
+    print("Extracting CFBD Season Games")
     for year in years:
         #Get Regular Season Matchup Data
         request_url_regular_season = str(cfb_url + str('games?year=' + str(year) + '&seasonType=regular&division=fbs'))
@@ -179,7 +191,7 @@ def cfbd_fbs_season_games(years):
         remove_duplicate_data_with_id_sqlite('cfb_extract_season_games')
 
 def cfbd_team_records(years):
-    # Create blank dataframe
+    print("Extracting CFBD Team Records")
     for year in years:
         request_url = str(cfb_url + str('records?year=' + str(year)))
         response_json = cfbd_api_request(request_url)
@@ -192,6 +204,7 @@ def cfbd_team_records(years):
             remove_duplicate_data_with_team_and_year_sqlite('cfb_extract_team_records')
 
 def cfbd_season_stats(years):
+    print("Extracting CFBD Season Stats")
     for year in years:
         request_url = str(cfb_url + str('stats/season?year=' + str(year)))
         response_json = cfbd_api_request(request_url)
@@ -200,6 +213,7 @@ def cfbd_season_stats(years):
         remove_duplicate_data_with_team_year_statname_sqlite('cfb_extract_season_stats')
 
 def cfbd_rankings(years):
+    print("Extracting CFBD Rankings")
     for year in years:
         request_url = str(cfb_url + str('rankings?year=' + str(year) + '&seasonType=regular'))
         response_json = cfbd_api_request(request_url)
@@ -220,6 +234,7 @@ def cfbd_rankings(years):
             remove_duplicate_data_with_team_year_week_sqlite('cfb_extract_rankings')
 
 def cfbd_epa(years):
+    print("Extracting CFBD EPA")
     for year in years:
         request_url = str(cfb_url + str('ppa/games?year=' + str(year) + '&seasonType=regular'))
         response_json = cfbd_api_request(request_url)
@@ -231,6 +246,7 @@ def cfbd_epa(years):
             remove_duplicate_data_with_gameid_sqlite('cfb_extract_epa')
 
 def cfbd_odds_per_game(years):
+    print("Extracting CFBD Odds")
     for year in years:
         request_url = str(cfb_url + str('metrics/wp/pregame?year=' + str(year) + '&seasonType=regular'))
         response_json = cfbd_api_request(request_url)
@@ -242,6 +258,7 @@ def cfbd_odds_per_game(years):
             remove_duplicate_data_with_gameid_sqlite('cfb_extract_odds_per_game')
 
 def cfbd_stats_per_game(years):
+    print("Extracting CFBD Stats Per Game")
     for year in years:
         request_url = str(cfb_url + str('stats/game/advanced?year=' + str(year)))
         response_json = cfbd_api_request(request_url)
