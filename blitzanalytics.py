@@ -47,6 +47,9 @@ def extract_cfb_data(arg_skip_extract, status_existing_data, years, report_year)
         extract.cfbd_epa(years)
         extract.cfbd_odds_per_game(years)
         extract.cfbd_stats_per_game(years)
+        extract.cfbd_player_team_roster(years)
+        extract.cfbd_player_stats_per_season(years)
+        extract.cfbd_player_usage_per_season(years)
         print("College Football Data Extraction Complete")
 
     if arg_skip_extract == 1:
@@ -72,6 +75,7 @@ def transform_cfb_data_from_cfbd():
     transform.stats_per_game()
     transform.team_info()
     transform.schedule()
+    transform.player_stats_and_team_roster()
     transform.combine_data_for_summary()
     transform.prep_data_for_reporting()
 

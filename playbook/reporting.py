@@ -303,6 +303,7 @@ def pdf_matchup_reports_new(reporting_year, reporting_week, report_season_type):
     cfb_team_info = load.sqlite_query_table('cfb_reporting_team_info')
     cfb_summary = load.sqlite_query_table('cfb_reporting_summary')
     cfb_season_stats_by_season = load.sqlite_query_table('cfb_reporting_season_stats_by_season')
+    cfb_player_season_stats = load.sqlite_query_table('cfb_reporting_player_stats_by_season')
 
     df_cfb_for_reporting_game_matchup = cfb_season_week_matchups[cfb_season_week_matchups['season'].astype(str).str.contains(reporting_year)]
     df_cfb_for_reporting_game_matchup_reporting_week = df_cfb_for_reporting_game_matchup.loc[(df_cfb_for_reporting_game_matchup['week'] == int(reporting_week)) & (df_cfb_for_reporting_game_matchup['season_type'] == str(report_season_type))]
@@ -850,12 +851,67 @@ def pdf_matchup_reports_new(reporting_year, reporting_week, report_season_type):
             #fig.show()
             return fig
 
+        def pdf_page_7(df_player_stat_data, home_team, away_team, report_year, subplot_title):
+            player_data_home_team = df_player_stat_data.loc[((df_player_stat_data['team_roster'] == home_team) | (df_player_stat_data['team_roster'] == away_team)) & (df_player_stat_data['season_roster'] == report_year)]
+            player_data_home_team.sort_values(by=['season_roster','position'], ascending=False, inplace=True)
+
+            player_data_home_team_offense = player_data_home_team.loc[
+                (player_data_home_team['position'] == "QB") | \
+                (player_data_home_team['position'] == "RB") | \
+                (player_data_home_team['position'] == "WR") \
+                    ]
+
+            player_data_home_team_col = ['playerId','player','position','year','team_roster','season_roster','team_stat','season_stat']
+            player_data_home_team_offense_stat_col = player_data_home_team_offense.filter(regex='passing|rushing|fumbles').columns.tolist()
+
+            player_data_home_team_offense_report_col = player_data_home_team_col + player_data_home_team_offense_stat_col
+            player_data_home_team_offense_stat = player_data_home_team_offense[player_data_home_team_offense_report_col]
+
+            fig = make_subplots(
+                rows=2, cols=1,
+                shared_xaxes=False,
+                vertical_spacing=0.03,
+                specs=[[{"type": "table"}],
+                       [{"type": "table"}]]
+            )
+            fig.add_trace(go.Table(
+                header=dict(
+                    values=player_data_home_team,
+                    font=dict(size=10),
+                    align="left"
+                ),
+                cells=dict(
+                    values=player_data_home_team,
+                    align="left"
+                )
+            ), row=1, col=1)
+            fig.add_trace(go.Table(
+                header=dict(
+                    values=player_data_away_team,
+                    font=dict(size=10),
+                    align="left"
+                ),
+                cells=dict(
+                    values=player_data_away_team,
+                    align="left"
+                )
+            ), row=2, col=1)
+            fig.update_layout(
+                height=800,
+                width=1200,
+                showlegend=False,
+                title_text=subplot_title
+            )
+            #fig.show()
+            return fig
+
         fig_pdf_page_1 = pdf_page_1(matchup_data, cfb_summary, home_team, away_team)
         fig_pdf_page_2 = pdf_page_2(reporting_year, df_matchup_home_away_all_data, "Points by Season", team_colors)
         fig_pdf_page_3 = pdf_page_3(reporting_year, df_matchup_home_away_all_data,"Success Rate by Report Year", team_colors)
         fig_pdf_page_4 = pdf_page_4(reporting_year, df_matchup_home_away_all_data,"Passing/Rushing Rates and EPA", team_colors)
         fig_pdf_page_5 = pdf_page_5(reporting_year, df_matchup_home_away_all_data,"Zscores", team_colors)
-        fig_pdf_page_6 = pdf_page_6(matchup_data, home_team, away_team, "Stats Tables")
+        fig_pdf_page_6 = pdf_page_6(matchup_data, home_team, away_team, "Team Stats Tables")
+        fig_pdf_page_7 = pdf_page_7(cfb_player_season_stats, home_team, away_team, reporting_year,"Player Stats Tables")
 
         figures = [
             fig_pdf_page_1,

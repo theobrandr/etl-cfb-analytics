@@ -385,6 +385,34 @@ def schedule():
     #Insert the transformed data into the DB
     insert_cfbd_to_sqlite('cfb_reporting_schedule', df_cfb_schedule_loc)
 
+def player_stats_and_team_roster():
+    print('Transforming Player Stats and Roster')
+    df_player_season_stats = sqlite_query_table_by_year('cfb_extract_player_stats_per_season')
+    df_player_season_stats.rename(columns={"season": "season_stat"}, inplace=True)
+    df_player_season_stats.rename(columns={"team": "team_stat"}, inplace=True)
+
+    df_player_team_roster = sqlite_query_table_by_year('cfb_extract_player_team_roster')
+    df_player_team_roster.rename(columns={"id": "playerId"},inplace=True)
+    df_player_team_roster.rename(columns={"team": "team_roster"}, inplace=True)
+    df_player_team_roster.rename(columns={"season": "season_roster"}, inplace=True)
+    df_player_team_roster_sel_col = df_player_team_roster[['playerId', 'team_roster', 'position', 'season_roster', 'year', 'timestamp']]
+
+    df_player_season_stats['stat'] = df_player_season_stats['stat'].fillna(0).astype(float)
+    df_player_season_stats['category_statType'] = df_player_season_stats['category'] + '_' + df_player_season_stats[
+        'statType']
+
+    df_player_season_stats_pivot = df_player_season_stats.pivot(
+        index=['playerId', 'player', 'team_stat', 'conference', 'season_stat'],
+        columns='category_statType',
+        values='stat').reset_index()
+
+    df_player_roster_season_stats_join = pd.merge(df_player_team_roster_sel_col,df_player_season_stats_pivot,
+                                                  on=['playerId'], how='outer')
+    df_player_roster_season_stats_join.sort_values(by=['playerId', 'season_roster', 'season_stat'], ascending=False, inplace=True)
+    df_player_roster_season_stats_join.reset_index(inplace=True)
+
+    insert_cfbd_to_sqlite('cfb_reporting_player_stats_by_season', df_player_roster_season_stats_join)
+    insert_cfbd_to_sqlite('cfb_reporting_player_team_roster', df_player_team_roster)
 
 def combine_data_for_summary():
     print('Transforming Summary Dataset')
