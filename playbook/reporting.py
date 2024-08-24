@@ -852,52 +852,120 @@ def pdf_matchup_reports_new(reporting_year, reporting_week, report_season_type):
             return fig
 
         def pdf_page_7(df_player_stat_data, home_team, away_team, report_year, subplot_title):
-            player_data_home_team = df_player_stat_data.loc[((df_player_stat_data['team_roster'] == home_team) | (df_player_stat_data['team_roster'] == away_team)) & (df_player_stat_data['season_roster'] == report_year)]
-            player_data_home_team.sort_values(by=['season_roster','position'], ascending=False, inplace=True)
+            player_data = df_player_stat_data.loc[((df_player_stat_data['team_roster'] == home_team) | (df_player_stat_data['team_roster'] == away_team)) & (df_player_stat_data['season_roster'] == report_year)]
+            player_data.sort_values(by=['team_roster','season_roster','position','year'], ascending=[True,True,True,False], inplace=True)
+            player_data_col = ['team_roster', 'season_roster','playerId', 'player', 'position', 'year', 'team_stat',
+                               'season_stat']
 
-            player_data_home_team_offense = player_data_home_team.loc[
-                (player_data_home_team['position'] == "QB") | \
-                (player_data_home_team['position'] == "RB") | \
-                (player_data_home_team['position'] == "WR") \
-                    ]
+            player_data_qb = player_data.loc[(player_data['position'] == "QB")]
+            player_data_qb_stat_col = player_data.filter(regex='passing|rushing|fumbles').columns.tolist()
+            player_data_qb_report_col = player_data_col + player_data_qb_stat_col
+            player_data_qb_stat = player_data_qb[player_data_qb_report_col]
 
-            player_data_home_team_col = ['playerId','player','position','year','team_roster','season_roster','team_stat','season_stat']
-            player_data_home_team_offense_stat_col = player_data_home_team_offense.filter(regex='passing|rushing|fumbles').columns.tolist()
+            player_data_wr = player_data.loc[(player_data['position'] == "WR")]
+            player_data_wr_stat_col = player_data.filter(regex='recieving|rushing|fumbles').columns.tolist()
+            player_data_wr_report_col = player_data_col + player_data_wr_stat_col
+            player_data_wr_stat = player_data_wr[player_data_wr_report_col]
+            def wrap_text_on_hyphen(text):
+                return '<br>'.join(text.split('_'))
 
-            player_data_home_team_offense_report_col = player_data_home_team_col + player_data_home_team_offense_stat_col
-            player_data_home_team_offense_stat = player_data_home_team_offense[player_data_home_team_offense_report_col]
+            wrapped_qb_headers = [wrap_text_on_hyphen(col) for col in player_data_qb_report_col]
+            wrapped_wr_headers = [wrap_text_on_hyphen(col) for col in player_data_wr_report_col]
 
             fig = make_subplots(
                 rows=2, cols=1,
                 shared_xaxes=False,
                 vertical_spacing=0.03,
                 specs=[[{"type": "table"}],
-                       [{"type": "table"}]]
+                       [{"type": "table"}]
+                       ]
             )
             fig.add_trace(go.Table(
                 header=dict(
-                    values=player_data_home_team,
+                    values=wrapped_qb_headers,
                     font=dict(size=10),
                     align="left"
                 ),
                 cells=dict(
-                    values=player_data_home_team,
+                    values=player_data_qb_stat.transpose().values.tolist(),
                     align="left"
                 )
             ), row=1, col=1)
             fig.add_trace(go.Table(
                 header=dict(
-                    values=player_data_away_team,
+                    values=wrapped_wr_headers,
                     font=dict(size=10),
                     align="left"
                 ),
                 cells=dict(
-                    values=player_data_away_team,
+                    values=player_data_wr_stat.transpose().values.tolist(),
+                    align="left"
+                )
+            ), row=2, col=1)
+
+            fig.update_layout(
+                height=1200,
+                width=1200,
+                showlegend=False,
+                title_text=subplot_title
+            )
+            #fig.show()
+            return fig
+
+        def pdf_page_8(df_player_stat_data, home_team, away_team, report_year, subplot_title):
+            player_data = df_player_stat_data.loc[((df_player_stat_data['team_roster'] == home_team) | (df_player_stat_data['team_roster'] == away_team)) & (df_player_stat_data['season_roster'] == report_year)]
+            player_data.sort_values(by=['team_roster','season_roster','position','year'], ascending=[True,True,True,False], inplace=True)
+            player_data_col = ['team_roster', 'season_roster','playerId', 'player', 'position', 'year', 'team_stat',
+                               'season_stat']
+
+            player_data_rb = player_data.loc[(player_data['position'] == "RB")]
+            player_data_rb_stat_col = player_data.filter(regex='rushing|fumbles').columns.tolist()
+            player_data_rb_report_col = player_data_col + player_data_rb_stat_col
+            player_data_rb_stat = player_data_rb[player_data_rb_report_col]
+
+            player_data_te = player_data.loc[(player_data['position'] == "TE")]
+            player_data_te_stat_col = player_data.filter(regex='recieving|rushing|fumbles').columns.tolist()
+            player_data_te_report_col = player_data_col + player_data_te_stat_col
+            player_data_te_stat = player_data_te[player_data_te_report_col]
+
+            def wrap_text_on_hyphen(text):
+                return '<br>'.join(text.split('_'))
+
+            wrapped_rb_headers = [wrap_text_on_hyphen(col) for col in player_data_rb_report_col]
+            wrapped_te_headers = [wrap_text_on_hyphen(col) for col in player_data_te_report_col]
+
+            fig = make_subplots(
+                rows=2, cols=1,
+                shared_xaxes=False,
+                vertical_spacing=0.03,
+                specs=[[{"type": "table"}],
+                       [{"type": "table"}],
+                       ]
+            )
+            fig.add_trace(go.Table(
+                header=dict(
+                    values=wrapped_rb_headers,
+                    font=dict(size=10),
+                    align="left"
+                ),
+                cells=dict(
+                    values=player_data_rb_stat.transpose().values.tolist(),
+                    align="left"
+                )
+            ), row=1, col=1)
+            fig.add_trace(go.Table(
+                header=dict(
+                    values=wrapped_te_headers,
+                    font=dict(size=10),
+                    align="left"
+                ),
+                cells=dict(
+                    values=player_data_te_stat.transpose().values.tolist(),
                     align="left"
                 )
             ), row=2, col=1)
             fig.update_layout(
-                height=800,
+                height=1200,
                 width=1200,
                 showlegend=False,
                 title_text=subplot_title
@@ -911,15 +979,17 @@ def pdf_matchup_reports_new(reporting_year, reporting_week, report_season_type):
         fig_pdf_page_4 = pdf_page_4(reporting_year, df_matchup_home_away_all_data,"Passing/Rushing Rates and EPA", team_colors)
         fig_pdf_page_5 = pdf_page_5(reporting_year, df_matchup_home_away_all_data,"Zscores", team_colors)
         fig_pdf_page_6 = pdf_page_6(matchup_data, home_team, away_team, "Team Stats Tables")
-        fig_pdf_page_7 = pdf_page_7(cfb_player_season_stats, home_team, away_team, reporting_year,"Player Stats Tables")
-
+        fig_pdf_page_7 = pdf_page_7(cfb_player_season_stats, home_team, away_team, reporting_year,"Player QB/WR Stats Tables")
+        fig_pdf_page_8 = pdf_page_8(cfb_player_season_stats, home_team, away_team, reporting_year,"Player RB/TE Stats Tables")
         figures = [
             fig_pdf_page_1,
             fig_pdf_page_2,
             fig_pdf_page_3,
             fig_pdf_page_4,
             fig_pdf_page_5,
-            fig_pdf_page_6
+            fig_pdf_page_6,
+            fig_pdf_page_7,
+            fig_pdf_page_8
         ]
 
         filename_team_report = file_path_cfb_reports_reporting_year_week + str(matchup) + ".pdf"
