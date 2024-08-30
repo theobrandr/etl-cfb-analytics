@@ -308,6 +308,7 @@ def pdf_matchup_reports_new(reporting_year, reporting_week, report_season_type):
     df_cfb_for_reporting_game_matchup = cfb_season_week_matchups[cfb_season_week_matchups['season'].astype(str).str.contains(reporting_year)]
     df_cfb_for_reporting_game_matchup_reporting_week = df_cfb_for_reporting_game_matchup.loc[(df_cfb_for_reporting_game_matchup['week'] == int(reporting_week)) & (df_cfb_for_reporting_game_matchup['season_type'] == str(report_season_type))]
     cfb_matchup_all_data_reporting_year = cfb_matchup_all_data.loc[cfb_matchup_all_data['season'] == str(reporting_year)]
+    cfb_player_season_stats_report_year = cfb_player_season_stats.loc[cfb_player_season_stats['season_roster'] == str(reporting_year)]
 
     for index, row in df_cfb_for_reporting_game_matchup_reporting_week.iterrows():
         home_team = row['home_team']
@@ -335,7 +336,6 @@ def pdf_matchup_reports_new(reporting_year, reporting_week, report_season_type):
         df_cfb_season_stats_by_season_home_away_append.sort_values(by=['season','team'], inplace=True, ascending=False)
 
         matchup_data = df_matchup_home_away_all_data.loc[df_matchup_home_away_all_data['Game Matchup'] == str(matchup)]
-
 
         def pdf_page_1(matchup_data, cfb_summary, home_team, away_team):
             matchup_data_columns = matchup_data[
@@ -851,57 +851,86 @@ def pdf_matchup_reports_new(reporting_year, reporting_week, report_season_type):
             #fig.show()
             return fig
 
-        def pdf_page_7(df_player_stat_data, home_team, away_team, report_year, subplot_title):
-            player_data = df_player_stat_data.loc[((df_player_stat_data['team_roster'] == home_team) | (df_player_stat_data['team_roster'] == away_team)) & (df_player_stat_data['season_roster'] == report_year)]
-            player_data.sort_values(by=['team_roster','season_roster','position','year'], ascending=[True,True,True,False], inplace=True)
-            player_data_col = ['team_roster', 'season_roster','playerId', 'player', 'position', 'year', 'team_stat',
+        def pdf_page_7(player_stat_data_report_year, home_team, away_team, report_year, subplot_title):
+            player_data = player_stat_data_report_year.loc[((player_stat_data_report_year['team_roster'] == home_team) | \
+                                                            (player_stat_data_report_year['team_roster'] == away_team)) & \
+                                                           (player_stat_data_report_year['season_roster'] == report_year)]
+            player_data.sort_values(by=['team_roster', 'season_roster', 'position', 'year'],
+                                    ascending=[True, True, True, False], inplace=True)
+            player_data_col = ['team_roster', 'season_roster', 'playerId', 'player', 'position', 'year', 'team_stat',
                                'season_stat']
 
             player_data_qb = player_data.loc[(player_data['position'] == "QB")]
             player_data_qb_stat_col = player_data.filter(regex='passing|rushing|fumbles').columns.tolist()
             player_data_qb_report_col = player_data_col + player_data_qb_stat_col
             player_data_qb_stat = player_data_qb[player_data_qb_report_col]
+            player_data_qb_stat_home = player_data_qb_stat.loc[player_data_qb_stat['team_roster'] == home_team]
+            player_data_qb_stat_away = player_data_qb_stat.loc[player_data_qb_stat['team_roster'] == away_team]
 
-            player_data_wr = player_data.loc[(player_data['position'] == "WR")]
-            player_data_wr_stat_col = player_data.filter(regex='recieving|rushing|fumbles').columns.tolist()
-            player_data_wr_report_col = player_data_col + player_data_wr_stat_col
-            player_data_wr_stat = player_data_wr[player_data_wr_report_col]
             def wrap_text_on_hyphen(text):
                 return '<br>'.join(text.split('_'))
 
             wrapped_qb_headers = [wrap_text_on_hyphen(col) for col in player_data_qb_report_col]
-            wrapped_wr_headers = [wrap_text_on_hyphen(col) for col in player_data_wr_report_col]
 
             fig = make_subplots(
                 rows=2, cols=1,
                 shared_xaxes=False,
                 vertical_spacing=0.03,
                 specs=[[{"type": "table"}],
-                       [{"type": "table"}]
-                       ]
+                       [{"type": "table"}]]
             )
-            fig.add_trace(go.Table(
-                header=dict(
-                    values=wrapped_qb_headers,
-                    font=dict(size=10),
-                    align="left"
-                ),
-                cells=dict(
-                    values=player_data_qb_stat.transpose().values.tolist(),
-                    align="left"
-                )
-            ), row=1, col=1)
-            fig.add_trace(go.Table(
-                header=dict(
-                    values=wrapped_wr_headers,
-                    font=dict(size=10),
-                    align="left"
-                ),
-                cells=dict(
-                    values=player_data_wr_stat.transpose().values.tolist(),
-                    align="left"
-                )
-            ), row=2, col=1)
+
+            # Check if the home team table is empty
+            if not player_data_qb_stat_home.empty:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=wrapped_qb_headers,
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=player_data_qb_stat_home.transpose().values.tolist(),
+                        align="left"
+                    )
+                ), row=1, col=1)
+            else:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=["No Data Available"],
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=[["No Data Available"]],
+                        align="left"
+                    )
+                ), row=1, col=1)
+
+            # Check if the away team table is empty
+            if not player_data_qb_stat_away.empty:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=wrapped_qb_headers,
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=player_data_qb_stat_away.transpose().values.tolist(),
+                        align="left"
+                    )
+                ), row=2, col=1)
+            else:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=["No Data Available"],
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=[["No Data Available"]],
+                        align="left"
+                    )
+                ), row=2, col=1)
 
             fig.update_layout(
                 height=1200,
@@ -912,8 +941,93 @@ def pdf_matchup_reports_new(reporting_year, reporting_week, report_season_type):
             #fig.show()
             return fig
 
-        def pdf_page_8(df_player_stat_data, home_team, away_team, report_year, subplot_title):
-            player_data = df_player_stat_data.loc[((df_player_stat_data['team_roster'] == home_team) | (df_player_stat_data['team_roster'] == away_team)) & (df_player_stat_data['season_roster'] == report_year)]
+        def pdf_page_8(player_stat_data_report_year, home_team, away_team, report_year, subplot_title):
+            player_data = player_stat_data_report_year.loc[((player_stat_data_report_year['team_roster'] == home_team) | (player_stat_data_report_year['team_roster'] == away_team)) & (player_stat_data_report_year['season_roster'] == report_year)]
+            player_data.sort_values(by=['team_roster','season_roster','position','year'], ascending=[True,True,True,False], inplace=True)
+            player_data_col = ['team_roster', 'season_roster','playerId', 'player', 'position', 'year', 'team_stat',
+                               'season_stat']
+
+            player_data_wr = player_data.loc[(player_data['position'] == "WR")]
+            player_data_wr_stat_col = player_data.filter(regex='recieving|rushing|fumbles').columns.tolist()
+            player_data_wr_report_col = player_data_col + player_data_wr_stat_col
+            player_data_wr_stat = player_data_wr[player_data_wr_report_col]
+            player_data_wr_stat_home = player_data_wr_stat.loc[player_data_wr_stat['team_roster'] == home_team]
+            player_data_wr_stat_away = player_data_wr_stat.loc[player_data_wr_stat['team_roster'] == away_team]
+            def wrap_text_on_hyphen(text):
+                return '<br>'.join(text.split('_'))
+
+            wrapped_wr_headers = [wrap_text_on_hyphen(col) for col in player_data_wr_report_col]
+
+            fig = make_subplots(
+                rows=2, cols=1,
+                shared_xaxes=False,
+                vertical_spacing=0.03,
+                specs=[[{"type": "table"}],
+                       [{"type": "table"}]]
+            )
+
+            # Check if the home team table is empty
+            if not player_data_wr_stat_home.empty:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=wrapped_wr_headers,
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=player_data_wr_stat_home.transpose().values.tolist(),
+                        align="left"
+                    )
+                ), row=1, col=1)
+            else:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=["No Data Available"],
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=[["No Data Available"]],
+                        align="left"
+                    )
+                ), row=1, col=1)
+
+            # Check if the away team table is empty
+            if not player_data_wr_stat_away.empty:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=wrapped_wr_headers,
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=player_data_wr_stat_away.transpose().values.tolist(),
+                        align="left"
+                    )
+                ), row=2, col=1)
+            else:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=["No Data Available"],
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=[["No Data Available"]],
+                        align="left"
+                    )
+                ), row=2, col=1)
+
+            fig.update_layout(
+                height=1200,
+                width=1200,
+                showlegend=False,
+                title_text=subplot_title
+            )
+            #fig.show()
+            return fig
+        def pdf_page_9(player_stat_data_report_year, home_team, away_team, report_year, subplot_title):
+            player_data = player_stat_data_report_year.loc[((player_stat_data_report_year['team_roster'] == home_team) | (player_stat_data_report_year['team_roster'] == away_team)) & (player_stat_data_report_year['season_roster'] == report_year)]
             player_data.sort_values(by=['team_roster','season_roster','position','year'], ascending=[True,True,True,False], inplace=True)
             player_data_col = ['team_roster', 'season_roster','playerId', 'player', 'position', 'year', 'team_stat',
                                'season_stat']
@@ -922,16 +1036,98 @@ def pdf_matchup_reports_new(reporting_year, reporting_week, report_season_type):
             player_data_rb_stat_col = player_data.filter(regex='rushing|fumbles').columns.tolist()
             player_data_rb_report_col = player_data_col + player_data_rb_stat_col
             player_data_rb_stat = player_data_rb[player_data_rb_report_col]
-
-            player_data_te = player_data.loc[(player_data['position'] == "TE")]
-            player_data_te_stat_col = player_data.filter(regex='recieving|rushing|fumbles').columns.tolist()
-            player_data_te_report_col = player_data_col + player_data_te_stat_col
-            player_data_te_stat = player_data_te[player_data_te_report_col]
+            player_data_rb_stat_home = player_data_rb_stat.loc[player_data_rb_stat['team_roster'] == home_team]
+            player_data_rb_stat_away = player_data_rb_stat.loc[player_data_rb_stat['team_roster'] == away_team]
 
             def wrap_text_on_hyphen(text):
                 return '<br>'.join(text.split('_'))
 
             wrapped_rb_headers = [wrap_text_on_hyphen(col) for col in player_data_rb_report_col]
+
+            fig = make_subplots(
+                rows=2, cols=1,
+                shared_xaxes=False,
+                vertical_spacing=0.03,
+                specs=[[{"type": "table"}],
+                       [{"type": "table"}]]
+            )
+
+            # Check if the home team table is empty
+            if not player_data_rb_stat_home.empty:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=wrapped_rb_headers,
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=player_data_rb_stat_home.transpose().values.tolist(),
+                        align="left"
+                    )
+                ), row=1, col=1)
+            else:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=["No Data Available"],
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=[["No Data Available"]],
+                        align="left"
+                    )
+                ), row=1, col=1)
+
+            # Check if the away team table is empty
+            if not player_data_rb_stat_away.empty:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=wrapped_rb_headers,
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=player_data_rb_stat_away.transpose().values.tolist(),
+                        align="left"
+                    )
+                ), row=2, col=1)
+            else:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=["No Data Available"],
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=[["No Data Available"]],
+                        align="left"
+                    )
+                ), row=2, col=1)
+
+            fig.update_layout(
+                height=1200,
+                width=1200,
+                showlegend=False,
+                title_text=subplot_title
+            )
+            #fig.show()
+            return fig
+        def pdf_page_10(player_stat_data_report_year, home_team, away_team, report_year, subplot_title):
+            player_data = player_stat_data_report_year.loc[((player_stat_data_report_year['team_roster'] == home_team) | (player_stat_data_report_year['team_roster'] == away_team)) & (player_stat_data_report_year['season_roster'] == report_year)]
+            player_data.sort_values(by=['team_roster','season_roster','position','year'], ascending=[True,True,True,False], inplace=True)
+            player_data_col = ['team_roster', 'season_roster','playerId', 'player', 'position', 'year', 'team_stat',
+                               'season_stat']
+
+            player_data_te = player_data.loc[(player_data['position'] == "TE")]
+            player_data_te_stat_col = player_data.filter(regex='recieving|rushing|fumbles').columns.tolist()
+            player_data_te_report_col = player_data_col + player_data_te_stat_col
+            player_data_te_stat = player_data_te[player_data_te_report_col]
+            player_data_te_stat_home = player_data_te_stat.loc[player_data_te_stat['team_roster'] == home_team]
+            player_data_te_stat_away = player_data_te_stat.loc[player_data_te_stat['team_roster'] == away_team]
+
+            def wrap_text_on_hyphen(text):
+                return '<br>'.join(text.split('_'))
+
             wrapped_te_headers = [wrap_text_on_hyphen(col) for col in player_data_te_report_col]
 
             fig = make_subplots(
@@ -939,31 +1135,61 @@ def pdf_matchup_reports_new(reporting_year, reporting_week, report_season_type):
                 shared_xaxes=False,
                 vertical_spacing=0.03,
                 specs=[[{"type": "table"}],
-                       [{"type": "table"}],
-                       ]
+                       [{"type": "table"}]]
             )
-            fig.add_trace(go.Table(
-                header=dict(
-                    values=wrapped_rb_headers,
-                    font=dict(size=10),
-                    align="left"
-                ),
-                cells=dict(
-                    values=player_data_rb_stat.transpose().values.tolist(),
-                    align="left"
-                )
-            ), row=1, col=1)
-            fig.add_trace(go.Table(
-                header=dict(
-                    values=wrapped_te_headers,
-                    font=dict(size=10),
-                    align="left"
-                ),
-                cells=dict(
-                    values=player_data_te_stat.transpose().values.tolist(),
-                    align="left"
-                )
-            ), row=2, col=1)
+
+            # Check if the home team table is empty
+            if not player_data_te_stat_home.empty:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=wrapped_te_headers,
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=player_data_te_stat_home.transpose().values.tolist(),
+                        align="left"
+                    )
+                ), row=1, col=1)
+            else:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=["No Data Available"],
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=[["No Data Available"]],
+                        align="left"
+                    )
+                ), row=1, col=1)
+
+            # Check if the away team table is empty
+            if not player_data_te_stat_away.empty:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=wrapped_te_headers,
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=player_data_te_stat_away.transpose().values.tolist(),
+                        align="left"
+                    )
+                ), row=2, col=1)
+            else:
+                fig.add_trace(go.Table(
+                    header=dict(
+                        values=["No Data Available"],
+                        font=dict(size=10),
+                        align="left"
+                    ),
+                    cells=dict(
+                        values=[["No Data Available"]],
+                        align="left"
+                    )
+                ), row=2, col=1)
+
             fig.update_layout(
                 height=1200,
                 width=1200,
@@ -979,8 +1205,11 @@ def pdf_matchup_reports_new(reporting_year, reporting_week, report_season_type):
         fig_pdf_page_4 = pdf_page_4(reporting_year, df_matchup_home_away_all_data,"Passing/Rushing Rates and EPA", team_colors)
         fig_pdf_page_5 = pdf_page_5(reporting_year, df_matchup_home_away_all_data,"Zscores", team_colors)
         fig_pdf_page_6 = pdf_page_6(matchup_data, home_team, away_team, "Team Stats Tables")
-        fig_pdf_page_7 = pdf_page_7(cfb_player_season_stats, home_team, away_team, reporting_year,"Player QB/WR Stats Tables")
-        fig_pdf_page_8 = pdf_page_8(cfb_player_season_stats, home_team, away_team, reporting_year,"Player RB/TE Stats Tables")
+        fig_pdf_page_7 = pdf_page_7(cfb_player_season_stats_report_year, home_team, away_team, reporting_year,"Player QB Stats Tables")
+        fig_pdf_page_8 = pdf_page_8(cfb_player_season_stats_report_year, home_team, away_team, reporting_year,"Player WR Stats Tables")
+        fig_pdf_page_9 = pdf_page_9(cfb_player_season_stats_report_year, home_team, away_team, reporting_year,"Player RB Stats Tables")
+        fig_pdf_page_10 = pdf_page_10(cfb_player_season_stats_report_year, home_team, away_team, reporting_year,"Player TE Stats Tables")
+
         figures = [
             fig_pdf_page_1,
             fig_pdf_page_2,
@@ -989,7 +1218,10 @@ def pdf_matchup_reports_new(reporting_year, reporting_week, report_season_type):
             fig_pdf_page_5,
             fig_pdf_page_6,
             fig_pdf_page_7,
-            fig_pdf_page_8
+            fig_pdf_page_8,
+            fig_pdf_page_9,
+            fig_pdf_page_10,
+
         ]
 
         filename_team_report = file_path_cfb_reports_reporting_year_week + str(matchup) + ".pdf"
