@@ -76,13 +76,12 @@ def transform_cfb_data_from_cfbd():
     transform.team_info()
     transform.schedule()
     transform.player_stats_and_team_roster()
-    transform.combine_data_for_summary()
     transform.prep_data_for_reporting()
 
 def reporting_cfb_data_from_cfbd():
     # Create Reports from Transformed College Football Data
     report_year, report_week, report_season_type = reporting.calculate_report_criteria(pregame.timestamp)
-    reporting.pdf_matchup_reports_new(report_year, report_week, report_season_type)
+    reporting.matchup_reports_new(report_year, report_week, report_season_type)
 
 
 if __name__ == '__main__':

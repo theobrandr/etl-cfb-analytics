@@ -41,6 +41,10 @@ def insert_cfbd_to_sqlite(cfb_table_name,df_cfbd_data):
     df_cfbd_data.to_sql(cfb_table_name, conn, if_exists='replace', index=False)
     conn.close()
 
+def remove_df_timestamp(df):
+    df_without_timestamp = df.loc[:, ~df.columns.str.startswith('timestamp')]
+    return(df_without_timestamp)
+
 def season_stats():
     print('Transforming Season Stats')
     df_season_stats = sqlite_query_table_by_year('cfb_extract_season_stats')
@@ -128,19 +132,24 @@ def games_and_stats():
     print('Transforming Game Matchups')
     df_cfb_team_info = sqlite_query_table('cfb_extract_team_info')
     df_cfb_season_games_all = sqlite_query_table_by_year('cfb_extract_season_games')
+
     # Clean up Team Info Data
     df_cfb_teaminfo_drop = df_cfb_team_info.dropna(subset=['conference'])
     df_select_col_cfb_teaminfo = df_cfb_teaminfo_drop[["id", "school", "conference", "location.venue_id","location.name","location.zip"]]
 
     #Add Columns for Game Matchup and Date without timestamps
     df_cfb_season_games_all["Game Matchup"] = df_cfb_season_games_all[['away_team', 'home_team']].apply(" @ ".join, axis=1)
+    column_to_move = 'Game Matchup'
+    df_cfb_season_games_all = df_cfb_season_games_all[[df_cfb_season_games_all.columns[0]] +
+                                    [column_to_move] + [col for col in df_cfb_season_games_all.columns
+                                            if col != df_cfb_season_games_all.columns[0] and col != column_to_move]]
     df_cfb_season_games_all['start_date'] = df_cfb_season_games_all['start_date'].str.replace('.000Z', '')
     df_cfb_season_games_all['start_date'] = pd.to_datetime(df_cfb_season_games_all['start_date'])
     df_cfb_season_games_all["date"] = df_cfb_season_games_all["start_date"].dt.date
     cfb_season_games_all_date_col = df_cfb_season_games_all['date']
     df_cfb_season_games_all.drop(labels=['date'], axis=1, inplace=True)
     df_cfb_season_games_all.insert(6, 'date', cfb_season_games_all_date_col)
-    df_cfb_season_games_all["Season + Week"] = df_cfb_season_games_all["season"].astype(str) + "_" + df_cfb_season_games_all["week"].astype(str)
+    #df_cfb_season_games_all["Season + Week"] = df_cfb_season_games_all["season"].astype(str) + "_" + df_cfb_season_games_all["week"].astype(str)
 
     #Split the home v away into 2 df
     df_cfb_season_games_all_home = df_cfb_season_games_all[["id", "Game Matchup", "season", "season_type", "week", "start_date", "date", "conference_game", "home_team", "home_conference", "home_points"]]
@@ -159,15 +168,20 @@ def games_and_stats():
     df_cfb_season_games_all_append_and_original_sel_col_joined = pd.merge(df_cfb_season_games_all_append,
                                                           df_cfb_season_games_original_sel_col,
                                                           left_on='id', right_on='id', how='left')
+
     #Rename the dataframe and fill NA rows
     df_cfb_season_games_all_updated = df_cfb_season_games_all_append_and_original_sel_col_joined
     df_cfb_season_games_all_updated.fillna(0, inplace=True)
-    #df_cfb_season_games_all_updated['points'].replace('None', '0').astype(float)
-    df_cfb_season_games_all_updated['points'].astype(float).astype(int)
+    columns_to_int = ['id', 'season', 'week', 'points']
+    df_cfb_season_games_all_updated[columns_to_int] = df_cfb_season_games_all_updated[columns_to_int].astype('int')
+
+    columns_to_int_original_df = ['id', 'season', 'week']
+    #Correct data types of original matchup columns
+    df_cfb_season_games_all[columns_to_int_original_df] = df_cfb_season_games_all[columns_to_int_original_df].astype('int')
 
     # Insert the transformed data into the DB
-    insert_cfbd_to_sqlite('cfb_transform_season_games_stats_updated', df_cfb_season_games_all_updated)
-    insert_cfbd_to_sqlite('cfb_transform_season_games_stats_all', df_cfb_season_games_all)
+    insert_cfbd_to_sqlite('cfb_transform_season_games_expand_matchup', df_cfb_season_games_all_updated)
+    insert_cfbd_to_sqlite('cfb_transform_season_games_matchups', df_cfb_season_games_all)
 
 def games_and_aggregate_scores():
     print('Transforming Home and Away Aggregate Scores')
@@ -194,6 +208,9 @@ def games_and_aggregate_scores():
     df_cfb_season_games_away_agg_scores_merged = pd.merge(df_cfb_season_games_away_group_scores_grouped_by_season, df_cfb_season_games_away_group_scores_grouped_by_total_years, left_on='team', right_on='team', how='left')
     #Transform Merge Home and Away scores together
     df_cfb_season_games_agg_scores = pd.merge(df_cfb_season_games_home_agg_scores_merged, df_cfb_season_games_away_agg_scores_merged, left_on=['team','season'], right_on=['team','season'], how='left')
+    df_cfb_season_games_agg_scores.fillna(0, inplace=True)
+    df_cfb_season_games_agg_scores[df_cfb_season_games_agg_scores.select_dtypes(include=['number']).columns] = \
+        df_cfb_season_games_agg_scores.select_dtypes(include=['number']).astype('int')
 
     # Insert the transformed data into the DB
     insert_cfbd_to_sqlite('cfb_transform_season_games_agg_scores', df_cfb_season_games_agg_scores)
@@ -283,6 +300,8 @@ def odds():
     #Append the away odds data with spread calculations onto the home odds data with spread calculations and sort
     df_cfb_season_games_odds_append = pd.concat([df_cfb_season_games_odds_join_groupby_combined_rows_home_rename_drop, df_cfb_season_games_odds_join_groupby_combined_rows_away_rename_drop])
     df_cfb_season_games_odds_append.sort_values(by=['id'], inplace=True, ascending=True)
+    columns_to_int = ['id', 'season', 'week', 'points', 'spread', 'game_point_diff']
+    df_cfb_season_games_odds_append[columns_to_int] = df_cfb_season_games_odds_append[columns_to_int].astype('int')
 
     #Group odds data for summmary view
     df_cfb_season_games_odds_groupby_home_for_summary = df_cfb_season_games_odds_groupby_home.rename(columns={"home_team": "team"})
@@ -294,9 +313,9 @@ def odds():
     df_cfb_season_games_odds_for_summary = df_cfb_season_games_odds_groupby_join_home_and_away_for_summary_drop
 
     #Select on the odds columns needed for joining onto the main dataframe
-    df_cfb_season_games_odds_append_sel_col = df_cfb_season_games_odds_append[['id','team','spread','home_team_WinProb','game_point_diff','result_of_the_spread', 'average_spread_covered_by_year','total_spread_covered_by_year',]]
+    df_cfb_season_games_odds_append_sel_col = df_cfb_season_games_odds_append[['id','season','week','team','spread','home_team_WinProb','game_point_diff','result_of_the_spread']]
     df_cfb_odds_per_game_with_calc = df_cfb_season_games_odds_append_sel_col
-
+    df_cfb_odds_per_game_with_calc.fillna(0, inplace=True)
     # Insert the transformed data into the DB
     insert_cfbd_to_sqlite('cfb_transform_odds_per_game_with_calc', df_cfb_odds_per_game_with_calc)
     insert_cfbd_to_sqlite('cfb_transform_odds_for_summary', df_cfb_season_games_odds_for_summary)
@@ -331,17 +350,13 @@ def polls():
     df_cfb_ranking_all_rm_null_ap = df_cfb_ranking_all[df_cfb_ranking_all['AP Top 25'].notnull()]
     df_cfb_ranking_all_rename = df_cfb_ranking_all_rm_null_ap.rename(columns={"school": "team"})
     df_cfb_ranking_all_drop = df_cfb_ranking_all_rename.drop(columns=['AFCA Division II Coaches Poll','AFCA Division III Coaches Poll','FCS Coaches Poll'], errors='ignore')
-    df_cfb_ranking_all_drop['AP Top 25'] = df_cfb_ranking_all_drop['AP Top 25'].astype(int).astype(str)
-    df_cfb_ranking_all_drop['Week with prefix'] = 'w' + df_cfb_ranking_all_drop['week'].astype(str)
-    df_cfb_ranking_all_drop["AP Top 25 by Week"] = df_cfb_ranking_all_drop[
-        ['Week with prefix', 'AP Top 25']].astype(str).apply(":".join, axis=1)
-    df_cfb_ranking_groupby_ap = df_cfb_ranking_all_drop.groupby(['team', 'season'])['AP Top 25 by Week'].agg(", ".join).reset_index()
+    df_cfb_ranking_all_drop.fillna(0, inplace=True)
+    columns_to_int = ['Playoff Committee Rankings', 'Coaches Poll', 'AP Top 25']
+    df_cfb_ranking_all_drop[columns_to_int] = df_cfb_ranking_all_drop[columns_to_int].astype('int')
     df_cfb_ranking_all_updated = df_cfb_ranking_all_drop
 
     # Insert the transformed data into the DB
-    insert_cfbd_to_sqlite('cfb_transform_rankings_groupby_ap', df_cfb_ranking_groupby_ap)
     insert_cfbd_to_sqlite('cfb_transform_rankings_all_updated', df_cfb_ranking_all_updated)
-
 
 def team_records():
     print('Transforming Team Records')
@@ -361,7 +376,11 @@ def stats_per_game():
     #Transform Stats per Game
     df_cfb_stats_per_game_rename = df_cfb_stats_per_game_all.rename(columns={"gameId": "id"})
     df_cfb_stats_per_game = df_cfb_stats_per_game_rename.drop(columns=['opponent'])
-
+    df_cfb_stats_per_game.fillna(0, inplace=True)
+    columns_to_int = ['id', 'season', 'week']
+    df_cfb_stats_per_game[columns_to_int] = df_cfb_stats_per_game[columns_to_int].astype('int')
+    columns_to_int_stats = df_cfb_stats_per_game.filter(like='offense').columns.tolist() + df_cfb_stats_per_game.filter(like='defense').columns.tolist()
+    df_cfb_stats_per_game[columns_to_int_stats] = df_cfb_stats_per_game[columns_to_int_stats].fillna(0)
     # Insert the transformed data into the DB
     insert_cfbd_to_sqlite('cfb_transform_stats_per_game', df_cfb_stats_per_game)
 
@@ -372,7 +391,7 @@ def team_info():
     df_cfb_team_info_updated = df_cfb_team_info_rename.loc[df_cfb_team_info_rename['classification'].str.contains("fbs|fcs", case=False, na=False)]
 
     #Insert the transformed data into the DB
-    insert_cfbd_to_sqlite('cfb_reporting_team_info', df_cfb_team_info_updated)
+    insert_cfbd_to_sqlite('cfb_transform_team_info', df_cfb_team_info_updated)
 
 def schedule():
     df_cfb_schedule = sqlite_query_table('cfb_extract_schedule')
@@ -414,19 +433,87 @@ def player_stats_and_team_roster():
     insert_cfbd_to_sqlite('cfb_reporting_player_stats_by_season', df_player_roster_season_stats_join)
     insert_cfbd_to_sqlite('cfb_reporting_player_team_roster', df_player_team_roster)
 
-def combine_data_for_summary():
-    print('Transforming Summary Dataset')
-    # CFB Seasons Stats zscores for summary
-    df_cfb_season_stats_all = sqlite_query_table('cfb_transform_season_stats')
-    df_cfb_season_games_agg_scores = sqlite_query_table('cfb_transform_season_games_agg_scores')
-    df_cfb_team_record_all_select_col = sqlite_query_table('cfb_transform_team_record')
-    df_cfb_ranking_groupby_ap = sqlite_query_table('cfb_transform_rankings_groupby_ap')
-    df_cfb_epa_per_season_for_summary = sqlite_query_table('cfb_transform_epa_per_season_for_summary')
-    df_cfb_schedule = sqlite_query_table('cfb_reporting_schedule')
 
-    df_cfb_season_stats_zscores_for_summary = df_cfb_season_stats_all[[
-        'team', 'season', 'games', 'offense_plus_zscore_sum', 'offense_minus_zscore_sum', 'offense_zscore_final',
-        'defense_zscore_final', 'specialteams_zscore_final', 'total_zscore']]
+def prep_data_for_reporting():
+    print('Transforming datasets for Season and Week Reporting')
+    df_cfb_expand_matchup = remove_df_timestamp(sqlite_query_table('cfb_transform_season_games_expand_matchup'))
+    df_cfb_ranking_all_updated = remove_df_timestamp(sqlite_query_table('cfb_transform_rankings_all_updated'))
+    df_cfb_epa_per_game = remove_df_timestamp(sqlite_query_table('cfb_transform_epa_per_game'))
+    df_cfb_stats_per_game = remove_df_timestamp(sqlite_query_table('cfb_transform_stats_per_game'))
+    df_cfb_odds_per_game_with_calc = remove_df_timestamp(sqlite_query_table('cfb_transform_odds_per_game_with_calc'))
+    df_cfb_season_games_matchups = remove_df_timestamp(sqlite_query_table('cfb_transform_season_games_matchups'))
+    df_cfb_team_info = remove_df_timestamp(sqlite_query_table('cfb_transform_team_info'))
+    df_cfb_season_stats_all = remove_df_timestamp(sqlite_query_table('cfb_transform_season_stats'))
+
+
+    # Get unique values from multiple columns
+    unique_teams = df_cfb_expand_matchup['team'].unique()
+    unique_seasons = df_cfb_expand_matchup['season'].unique()
+    unique_weeks = df_cfb_expand_matchup['week'].unique()
+    unique_season_type = df_cfb_expand_matchup['season_type'].unique()
+
+    postseason_data = df_cfb_expand_matchup[df_cfb_expand_matchup['season_type'] == 'postseason']
+    unique_postseason_weeks = postseason_data['week'].unique()
+    df_regular_season_combinations = pd.MultiIndex.from_product([unique_teams, unique_seasons, unique_weeks, ['regular']], names=['team', 'season', 'week', 'season_type']).to_frame(index=False)
+    df_postseason_combinations = pd.MultiIndex.from_product([unique_teams, unique_seasons, unique_postseason_weeks, ['postseason']], names=['team', 'season', 'week', 'season_type']).to_frame(index=False)
+    df_base_season_games = pd.concat([df_regular_season_combinations, df_postseason_combinations], ignore_index=True)
+    df_base_season_games['sort_order'] = df_base_season_games['season_type'].apply(lambda x: 1 if x == 'postseason' else 0)
+    df_base_season_games.sort_values(by=['team', 'season', 'sort_order', 'week'], ascending=[True, True, True, True], inplace=True)
+    df_base_season_games.drop(columns='sort_order', inplace=True)
+
+    df_cfb_expand_matchup_sel_col = df_cfb_expand_matchup[['team', 'season', 'week', 'season_type', 'points', 'home_vs_away']]
+    df_cfb_team_info_sel_col = df_cfb_team_info[['team','abbreviation','conference','classification','color','alt_color']]
+
+    df_base_team_season_games = pd.merge(df_base_season_games,
+                                                 df_cfb_team_info_sel_col,
+                                                 left_on=['team'],
+                                                 right_on=['team'],
+                                                 how='left')
+
+    #Transform df's with stats and merge on games
+    df_base_team_season_games_matchup = pd.merge(df_base_team_season_games,
+                                                 df_cfb_expand_matchup_sel_col,
+                                                 left_on=['team', 'season', 'week', 'season_type'],
+                                                 right_on=['team', 'season', 'week', 'season_type'],
+                                                 how='left')
+
+    df_base_team_season_games_matchup_ranking = pd.merge(df_base_team_season_games_matchup,
+                                        df_cfb_ranking_all_updated,
+                                        left_on=['team', 'season', 'week'],
+                                        right_on=['team', 'season', 'week'],
+                                        how='left')
+    df_base_team_season_games_matchup_ranking_epa = pd.merge(df_base_team_season_games_matchup_ranking,
+                                        df_cfb_epa_per_game,
+                                        left_on=['team', 'season', 'week', 'conference'],
+                                        right_on=['team', 'season', 'week', 'conference'],
+                                        how='left')
+    df_base_team_season_games_matchup_ranking_epa_odds = pd.merge(df_base_team_season_games_matchup_ranking_epa,
+                                        df_cfb_odds_per_game_with_calc,
+                                        left_on=['team', 'season', 'week'],
+                                        right_on=['team', 'season', 'week'],
+                                        how='left')
+    df_base_team_season_games_matchup_ranking_epa_odds_stats = pd.merge(df_base_team_season_games_matchup_ranking_epa_odds,
+                                        df_cfb_stats_per_game,
+                                        left_on=['team', 'season', 'week'],
+                                        right_on=['team', 'season', 'week'],
+                                        how='left')
+
+    cfb_team_season_games_all_stats = df_base_team_season_games_matchup_ranking_epa_odds_stats.drop(columns=['id_x', 'id_y', 'id'])
+    cfb_season_games_matchups = df_cfb_season_games_matchups
+
+    # Insert the transformed data into the DB
+    insert_cfbd_to_sqlite('cfb_reporting_team_season_games_all_stats', cfb_team_season_games_all_stats)
+    insert_cfbd_to_sqlite('cfb_reporting_season_games_matchups', cfb_season_games_matchups)
+
+    print('Transforming Summary Dataset')
+    #CFB Seasons Stats zscores for summary
+    df_cfb_season_games_agg_scores = remove_df_timestamp(sqlite_query_table('cfb_transform_season_games_agg_scores'))
+    df_cfb_team_record_all_select_col = remove_df_timestamp(sqlite_query_table('cfb_transform_team_record'))
+    df_cfb_epa_per_season_for_summary = remove_df_timestamp(sqlite_query_table('cfb_transform_epa_per_season_for_summary'))
+    df_cfb_schedule = remove_df_timestamp(sqlite_query_table('cfb_reporting_schedule'))
+    df_cfb_odds = remove_df_timestamp(sqlite_query_table('cfb_transform_odds_for_summary'))
+
+    df_cfb_season_stats_zscores_for_summary = df_cfb_season_stats_all
 
     #CFB Season Games Score Calculation for summary
     df_cfb_season_games_agg_scores_for_summary = df_cfb_season_games_agg_scores[['team','season','home_points_season_mean','home_points_mean_over_the_years','away_points_season_mean','away_points_mean_over_the_years']]
@@ -434,15 +521,8 @@ def combine_data_for_summary():
     #CFB Team Wins and Losses by Year for summary
     df_cfb_team_record_all_select_col_for_summary = df_cfb_team_record_all_select_col
 
-    #CFB Top 25 Ranking for summary
-    df_cfb_ranking_for_summary = df_cfb_ranking_groupby_ap
-
     # CFB Join dataframes for summary
-    cfb_summary_join_record_and_rankings = pd.merge(df_cfb_team_record_all_select_col_for_summary,
-                                                    df_cfb_ranking_for_summary,
-                                                    left_on=['team', 'season'],
-                                                    right_on=['team', 'season'], how='left')
-    cfb_summary_join_record_rank_and_agg_scores = pd.merge(cfb_summary_join_record_and_rankings,
+    cfb_summary_join_record_rank_and_agg_scores = pd.merge(df_cfb_team_record_all_select_col_for_summary,
                                                            df_cfb_season_games_agg_scores_for_summary,
                                                            left_on=['team', 'season'],
                                                            right_on=['team', 'season'], how='left')
@@ -454,7 +534,15 @@ def combine_data_for_summary():
                                                             df_cfb_epa_per_season_for_summary,
                                                             left_on=['team', 'season'],
                                                             right_on=['team', 'season'], how='left')
-    cfb_summary_all_joins = cfb_summary_join_record_rank_agg_zscores_epa.sort_values(by=['team', 'season'], ascending=True, na_position='first')
+    cfb_summary_join_record_rank_agg_zscores_epa = cfb_summary_join_record_rank_agg_zscores_epa.drop(\
+        columns=cfb_summary_join_record_rank_agg_zscores_epa.filter(like='timestamp').columns)
+
+    cfb_summary_join_record_rank_agg_zscores_epa_odds = pd.merge(cfb_summary_join_record_rank_agg_zscores_epa,
+                                                            df_cfb_odds,
+                                                            left_on=['team', 'season'],
+                                                            right_on=['team', 'season'], how='left')
+
+    cfb_summary_all_joins = cfb_summary_join_record_rank_agg_zscores_epa_odds.sort_values(by=['team', 'season'], ascending=True, na_position='first')
 
     df_cfb_summary_years = cfb_summary_all_joins.groupby('season').size().reset_index(name='Count')
     cfb_summary_years_set = set(df_cfb_summary_years ['season'].tolist())
@@ -462,148 +550,34 @@ def combine_data_for_summary():
     cfb_schedule_years_set = set(df_cfb_schedule_years['season'].astype(int).tolist())
 
     years_to_fill = cfb_schedule_years_set.difference(cfb_summary_years_set)
+    if len(years_to_fill) == 1:
+        years_to_fill = str(next(iter(years_to_fill)))  # Extract single element
+        # Use .contains() for exact matching
+        cfb_summary_all_joins_loc = cfb_summary_all_joins.loc[
+            ~cfb_summary_all_joins['season'].astype(str).str.contains(years_to_fill, regex=False, case=False, na=False)
+        ]
+    else:
+        # Handle multiple elements using .isin()
+        years_to_fill = list(map(str, years_to_fill))
+        cfb_summary_all_joins_loc = cfb_summary_all_joins.loc[
+            ~cfb_summary_all_joins['season'].astype(str).isin(years_to_fill)
+        ]
 
-    cfb_summary_all_joins_loc = cfb_summary_all_joins.loc[
-        ~cfb_summary_all_joins['season'].astype(str).str.contains(str(years_to_fill), regex=False, case=False, na=False)]
     cfb_summary_all_joins_loc_groupby = cfb_summary_all_joins_loc.groupby('team')["season"].count().reset_index()
     cfb_summary_all_joins_loc_groupby['season'] = str(years_to_fill)
     cfb_summary_all_joins_loc_groupby_merged = pd.concat([cfb_summary_all_joins, cfb_summary_all_joins_loc_groupby])
     cfb_summary_all_joins_loc_groupby_merged_fillna = cfb_summary_all_joins_loc_groupby_merged.fillna(0)
     cfb_summary_join_record_rank_agg_zscores_epa_sorted = cfb_summary_all_joins_loc_groupby_merged_fillna.sort_values(by=['team', 'season'], ascending=True, na_position='first')
+    #cfb_summary[cfb_summary.select_dtypes(include=['number']).columns] = cfb_summary.select_dtypes(include=['number']).astype('int')
+    df_unique_team_season_combinations = pd.MultiIndex.from_product(
+        [unique_teams, unique_seasons],names=['team', 'season']).to_frame(index=False)
 
-    cfb_summary = cfb_summary_join_record_rank_agg_zscores_epa_sorted.fillna(0)
-
-    # Insert the transformed data into the DB
-    insert_cfbd_to_sqlite('cfb_reporting_summary', cfb_summary)
-
-def prep_data_for_reporting():
-    def remove_df_timestamp(df):
-        df_without_timestamp = df.loc[:, ~df.columns.str.startswith('timestamp')]
-        return(df_without_timestamp)
-    def remove_df_season(df):
-        df_without_season_ = df.loc[:, ~df.columns.str.startswith('season_y')]
-        df_renamed = df_without_season_.rename(columns={"season_x": "season"})
-        return(df_renamed)
-
-    print('Transforming datasets for loading')
-    df_cfb_season_stats_all = remove_df_timestamp(sqlite_query_table('cfb_transform_season_stats'))
-    df_cfb_season_games_all_updated = remove_df_timestamp(sqlite_query_table('cfb_transform_season_games_stats_updated'))
-    df_cfb_season_games_agg_scores = remove_df_timestamp(sqlite_query_table('cfb_transform_season_games_agg_scores'))
-    df_cfb_team_record_all_select_col = remove_df_timestamp(sqlite_query_table('cfb_transform_team_record'))
-    df_cfb_ranking_all_updated = remove_df_timestamp(sqlite_query_table('cfb_transform_rankings_all_updated'))
-    df_cfb_epa_per_game = remove_df_timestamp(sqlite_query_table('cfb_transform_epa_per_game'))
-    df_cfb_stats_per_game = remove_df_timestamp(sqlite_query_table('cfb_transform_stats_per_game'))
-    df_cfb_season_games_all = remove_df_timestamp(sqlite_query_table('cfb_transform_season_games_stats_all'))
-    df_cfb_odds_per_game_with_calc = remove_df_timestamp(sqlite_query_table('cfb_transform_odds_per_game_with_calc'))
-
-    #Transform df's with stats and merge on games
-    df_cfb_games_and_stats = pd.merge(df_cfb_season_games_all_updated, df_cfb_season_stats_all,
-                                      left_on=['team','season'], right_on=['team','season'], how='left')
-
-    #Transform merge (games and stats) with (agg scores)
-    df_cfb_games_stats_agg_scores = pd.merge(df_cfb_games_and_stats, df_cfb_season_games_agg_scores,
-                                             left_on=['team','season'], right_on=['team','season'], how='left')
-
-    #Transform Join Coach Poll / Rankings with Games/Stats/Agg Scores df
-    df_cfb_games_stats_agg_scores_rankings = pd.merge(df_cfb_games_stats_agg_scores,df_cfb_ranking_all_updated ,
-                                                      left_on=['team','week','season'],right_on=['team','week','season'], how='left', suffixes=('_x', '_y'))
-
-    #Transform Join Rankings/Games/Stats/Agg Scores with Records
-    df_cfb_games_stats_agg_scores_rankings_team_records = pd.merge(df_cfb_games_stats_agg_scores_rankings, df_cfb_team_record_all_select_col,
-                                                                   left_on=['team','season'],right_on=['team','season'], how='left')
-
-    #Transform Join EPA per Game on Rankings/Games/Stats/Agg Scores with Records
-    df_cfb_epa_per_game_all_select_col = df_cfb_epa_per_game.drop(
-        columns=['season', 'week', 'conference', 'opponent'])
-    df_cfb_games_stats_agg_scores_rankings_team_records_epa = pd.merge(df_cfb_games_stats_agg_scores_rankings_team_records, df_cfb_epa_per_game_all_select_col,
-        left_on=['id', 'team'], right_on=['id', 'team'], how='left')
-
-    #Transform Join Rankings/Games/Stats/Agg Scores/EPA with Odds
-    df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds = pd.merge(df_cfb_games_stats_agg_scores_rankings_team_records_epa, df_cfb_odds_per_game_with_calc,
-        left_on=['id', 'team'], right_on=['id', 'team'], how='left')
-    for col in df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds:
-        # get dtype for column
-        datatype = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds[col].dtype
-        # check if it is a number
-        if datatype == int or datatype == float:
-            df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds[col].fillna(0, inplace=True)
-        else:
-            df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds[col].fillna("No Data", inplace=True)
-
-
-    #Transform Join Rankings/Games/Stats/Agg Scores/Records with Stats per game
-    df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame_org = pd.merge(df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds,
-                                                                   df_cfb_stats_per_game,
-                                                                   left_on=['team', 'week', 'id'],
-                                                                   right_on=['team', 'week', 'id'], how='left')
-    df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame = remove_df_season(df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame_org)
-
-    #Transform Join Coach Poll / Rankings with Games/Stats/Agg Scores df
-    df_cfb_season_games_all_updated_join_rankings = pd.merge(df_cfb_season_games_all_updated, df_cfb_ranking_all_updated,
-                                                      left_on=['team', 'week', 'season'],
-                                                      right_on=['team', 'week', 'season'], how='left')
-
-    #Transform Join Game Matchups with Stats per game
-    df_cfb_season_games_all_updated_join_stats_per_game = pd.merge(df_cfb_season_games_all_updated, df_cfb_stats_per_game,
-                                                      left_on=['team', 'week', 'id'],
-                                                      right_on=['team', 'week', 'id'], how='left')
-
-    #General Game data joined with odds
-    df_cfb_season_games_all_updated_join_odds = pd.merge(df_cfb_season_games_all_updated, df_cfb_odds_per_game_with_calc,
-                                                        left_on=['id', 'team'], right_on=['id', 'team'], how='left')
-    for col in df_cfb_season_games_all_updated_join_odds:
-        # get dtype for column
-        datatype = df_cfb_season_games_all_updated_join_odds[col].dtype
-        # check if it is a number
-        if datatype == int or datatype == float:
-            df_cfb_season_games_all_updated_join_odds[col].fillna(0, inplace=True)
-        else:
-            df_cfb_season_games_all_updated_join_odds[col].fillna("No Data", inplace=True)
-
-    #CFB Games/Matchups by Season and Week
-    df_cfb_season_games_all['season'] = df_cfb_season_games_all['season'].astype(int)
-    cfb_season_week_matchups = df_cfb_season_games_all
-    cfb_season_week_matchups_home_updated = df_cfb_season_games_all_updated
-
-    #CFB Season Games Score Calculation
-    cfb_season_games_agg_scores = df_cfb_season_games_agg_scores
-    cfb_season_games_agg_scores = cfb_season_games_agg_scores.fillna(0)
-
-    #CFB Team Wins and Losses by Year
-    cfb_team_record_by_year = df_cfb_team_record_all_select_col
-    cfb_team_record_by_year = cfb_team_record_by_year.fillna(0)
-
-    #CFB Games with odds/spread
-    cfb_games_with_spread_analytics = df_cfb_season_games_all_updated_join_odds
-    cfb_games_with_spread_analytics = cfb_games_with_spread_analytics.fillna(0)
-
-    #CFB Games with all advanced stats
-    cfb_season_stats_by_season = df_cfb_season_stats_all
-    cfb_season_stats_by_season = cfb_season_stats_by_season.fillna(0)
-
-    #CFB Stats per Game
-    cfb_stats_per_game = df_cfb_stats_per_game
-    cfb_stats_per_game = cfb_stats_per_game.fillna(0)
-
-    #CFB Stats per Game with Matchup
-    cfb_matchup_with_stats_per_game = df_cfb_season_games_all_updated_join_stats_per_game
-    cfb_matchup_with_stats_per_game = cfb_matchup_with_stats_per_game.fillna(0)
-
-    #CFB All Matchup Data
-    df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'] = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'].astype(int)
-    df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'] = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['season'].astype(str)
-    df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['points'] = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame['points'].astype(int)
-
-    cfb_matchup_all_data_pre_na_fill = df_cfb_games_stats_agg_scores_rankings_team_records_epa_odds_statspergame
-    cfb_matchup_all_data = cfb_matchup_all_data_pre_na_fill.fillna(0)
+    cfb_summary = pd.merge(df_unique_team_season_combinations,cfb_summary_join_record_rank_agg_zscores_epa_sorted,
+                                                                 left_on=['team', 'season'],
+                                                                 right_on=['team', 'season'], how='left')
+    cfb_summary.fillna(0, inplace=True)
+    cfb_summary[cfb_summary.select_dtypes(include=['number']).columns] = cfb_summary.select_dtypes(include=['number']).astype('float32')
 
     # Insert the transformed data into the DB
-    insert_cfbd_to_sqlite('cfb_reporting_matchup_all_data', cfb_matchup_all_data)
-    insert_cfbd_to_sqlite('cfb_reporting_games_with_spread_analytics', cfb_games_with_spread_analytics)
-    insert_cfbd_to_sqlite('cfb_reporting_season_stats_by_season', cfb_season_stats_by_season)
-    insert_cfbd_to_sqlite('cfb_reporting_season_week_matchups', cfb_season_week_matchups)
-    insert_cfbd_to_sqlite('cfb_reporting_season_week_matchups_home_updated', cfb_season_week_matchups_home_updated)
-    insert_cfbd_to_sqlite('cfb_reporting_stats_per_game', cfb_stats_per_game)
-    insert_cfbd_to_sqlite('cfb_reporting_matchup_with_stats_per_game', cfb_matchup_with_stats_per_game)
-    insert_cfbd_to_sqlite('cfb_reporting_season_games_agg_scores', cfb_season_games_agg_scores)
-    insert_cfbd_to_sqlite('cfb_reporting_team_record_by_years', cfb_team_record_by_year)
+    insert_cfbd_to_sqlite('cfb_reporting_season_summary', cfb_summary)
+
