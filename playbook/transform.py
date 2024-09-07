@@ -173,11 +173,13 @@ def games_and_stats():
     df_cfb_season_games_all_updated = df_cfb_season_games_all_append_and_original_sel_col_joined
     df_cfb_season_games_all_updated.fillna(0, inplace=True)
     columns_to_int = ['id', 'season', 'week', 'points']
-    df_cfb_season_games_all_updated[columns_to_int] = df_cfb_season_games_all_updated[columns_to_int].astype('int')
+    df_cfb_season_games_all_updated[columns_to_int] = df_cfb_season_games_all_updated[columns_to_int].apply(pd.to_numeric, errors='coerce')
+    df_cfb_season_games_all_updated[columns_to_int] = df_cfb_season_games_all_updated[columns_to_int].astype('float').astype('int')
 
-    columns_to_int_original_df = ['id', 'season', 'week']
     #Correct data types of original matchup columns
-    df_cfb_season_games_all[columns_to_int_original_df] = df_cfb_season_games_all[columns_to_int_original_df].astype('int')
+    columns_to_int_original_df = ['id', 'season', 'week']
+    df_cfb_season_games_all[columns_to_int_original_df] = df_cfb_season_games_all[columns_to_int_original_df].apply(pd.to_numeric, errors='coerce')
+    df_cfb_season_games_all[columns_to_int_original_df] = df_cfb_season_games_all[columns_to_int_original_df].astype('float').astype('int')
 
     # Insert the transformed data into the DB
     insert_cfbd_to_sqlite('cfb_transform_season_games_expand_matchup', df_cfb_season_games_all_updated)
@@ -351,8 +353,10 @@ def polls():
     df_cfb_ranking_all_rename = df_cfb_ranking_all_rm_null_ap.rename(columns={"school": "team"})
     df_cfb_ranking_all_drop = df_cfb_ranking_all_rename.drop(columns=['AFCA Division II Coaches Poll','AFCA Division III Coaches Poll','FCS Coaches Poll'], errors='ignore')
     df_cfb_ranking_all_drop.fillna(0, inplace=True)
+    df_cfb_ranking_all_drop['Playoff Committee Rankings'] = df_cfb_ranking_all_drop['Playoff Committee Rankings'].replace(r'^\s*$', 0, regex=True).fillna(0).astype(str)
+    print(df_cfb_ranking_all_drop)
     columns_to_int = ['Playoff Committee Rankings', 'Coaches Poll', 'AP Top 25']
-    df_cfb_ranking_all_drop[columns_to_int] = df_cfb_ranking_all_drop[columns_to_int].astype('int')
+    df_cfb_ranking_all_drop[columns_to_int] = df_cfb_ranking_all_drop[columns_to_int].apply(pd.to_numeric, errors='coerce').astype('int')
     df_cfb_ranking_all_updated = df_cfb_ranking_all_drop
 
     # Insert the transformed data into the DB
