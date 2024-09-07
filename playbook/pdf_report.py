@@ -1,7 +1,6 @@
 import os
 import io
 from playbook import load
-from playbook import plays
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
@@ -13,22 +12,113 @@ import matplotlib.pyplot as plt
 cwd = os.getcwd()
 file_path_cfb = cwd
 
+
+def matchup_points_by_season_bar(df):
+    fig = px.bar(
+        df,
+        x="week",
+        y="points",
+        color="team",
+        barmode="group",
+        facet_col="season",
+    )
+    fig.update_layout(
+        height=600,
+        width=1600,
+        title_text="Matchup Points by Week for Each Season"
+    )
+
+    for facet in fig.select_xaxes():
+        facet.update(
+            tickmode='linear',
+            tick0=1,
+            dtick=1
+        )
+    #fig.show()
+    return fig
+
+def matchup_spread_result_by_season_bar(df):
+    df['spread_counts'] = 1
+    fig = px.bar(
+        df,
+        x="result_of_the_spread",
+        y='spread_counts',
+        color="team",
+        barmode="group",
+        facet_col="season",
+    )
+    fig.update_layout(
+        height=600,
+        width=1600,
+        title_text="Result of the Spread Totals for Each Season"
+    )
+
+    for facet in fig.select_xaxes():
+        facet.update(
+            tickmode='linear',
+            tick0=1,
+            dtick=1
+        )
+    #fig.show()
+    return fig
+
+
+
+def matchup_stats_table(cfb_season_stats_by_season, home_team, away_team, stat_type):
+    if stat_type == 'offense':
+        stat_type_columns = ['team', 'season', 'offense_possessionTime', 'offense_totalYards',
+                           'offense_netPassingYards', 'offense_passAttempts', 'offense_passCompletions',
+                           'offense_passingTDs', 'offense_rushingYards', 'offense_rushingAttempts',
+                           'offense_rushingTDs', 'offense_turnovers', 'offense_fumblesLost',
+                           'offense_passesIntercepted']
+    elif stat_type == 'offense_downs':
+        stat_type_columns = ['team', 'season', 'offense_firstDowns', 'offense_thirdDowns', 'offense_thirdDownConversions',
+                    'offense_fourthDowns', 'offense_fourthDownConversions', 'offense_turnovers',
+                    'offense_fumblesLost', 'offense_passesIntercepted']
+    elif stat_type == 'defense':
+        stat_type_columns = ['team', 'season', 'defense_tacklesForLoss', 'defense_sacks', 'defense_fumblesRecovered',
+                    'defense_interceptions', 'defense_interceptionTDs']
+    elif stat_type == 'special_teams':
+        stat_type_columns = ['team', 'season', 'specialteams_kickReturns', 'specialteams_kickReturnYards', 'specialteams_kickReturnTDs',
+                'specialteams_puntReturnYards', 'specialteams_puntReturns', 'specialteams_puntReturnTDs']
+
+    df = cfb_season_stats_by_season.loc[(cfb_season_stats_by_season['team'] == home_team) |(cfb_season_stats_by_season['team'] == away_team)]
+
+    fig = go.Figure(go.Table(
+        header=dict(
+            values=list(stat_type_columns),
+            font=dict(size=10),
+            align="left"
+        ),
+        cells=dict(
+            values=[df[col].tolist() for col in list(stat_type_columns)],
+            align="left"
+        )
+    )
+    )
+    #fig.show()
+    return fig
+
 def page_1(matchup_data, cfb_summary, home_team, away_team, report_title):
     matchup_data_columns = matchup_data[
         ['team', 'conference', 'home_vs_away', 'AP Top 25', 'season', 'season_type', 'week']]
+
     season_summary_columns = ['season', 'team', 'total.wins', 'total.losses', 'home_points_season_mean',
                               'away_points_season_mean', 'epa_per_game_offense_overall_avg_per_season',
                               'epa_per_game_offense_overall_avg_per_season']
-    cfb_summary_filtered = cfb_summary.loc[
-        (cfb_summary['team'] == home_team) | (cfb_summary['team'] == away_team)]
-    cfb_summary_filtered_values = [cfb_summary_filtered[col] for col in season_summary_columns]
+    cfb_summary_home = cfb_summary.loc[(cfb_summary['team'] == home_team)]
+    cfb_summary_away = cfb_summary.loc[(cfb_summary['team'] == away_team)]
+    cfb_summary_home_values = [cfb_summary_home[col] for col in season_summary_columns]
+    cfb_summary_away_values = [cfb_summary_away[col] for col in season_summary_columns]
 
     fig = make_subplots(
-        rows=2, cols=1,
+        rows=3, cols=1,
         shared_xaxes=False,
         vertical_spacing=0.03,
         specs=[[{"type": "table"}],
-               [{"type": "table"}]]
+               [{"type": "table"}],
+               [{"type": "table"}]
+               ]
     )
     fig.add_trace(go.Table(
         header=dict(
@@ -48,22 +138,31 @@ def page_1(matchup_data, cfb_summary, home_team, away_team, report_title):
             align="left"
         ),
         cells=dict(
-            values=cfb_summary_filtered_values,
+            values=cfb_summary_home_values,
             align="left"
         )
     ), row=2, col=1)
+    fig.add_trace(go.Table(
+        header=dict(
+            values=season_summary_columns,
+            font=dict(size=10),
+            align="left"
+        ),
+        cells=dict(
+            values=cfb_summary_away_values,
+            align="left"
+        )
+    ), row=3, col=1)
     fig.update_layout(
         height=800,
         width=1200,
         showlegend=False,
         title_text=report_title
     )
-    # fig.show()
+    #fig.show()
     return fig
 
-
 def page_2(reporting_year, df_matchup_home_away_all_data, subplot_title, team_colors):
-    df_matchup_home_away_all_data['spread_counts'] = 1
     seasons = list(range(int(reporting_year), int(reporting_year) - 5, -1))
     subplot_col_number = len(seasons)
 
@@ -71,21 +170,29 @@ def page_2(reporting_year, df_matchup_home_away_all_data, subplot_title, team_co
     figures_spread = []
 
     for season in seasons:
-        df = df_matchup_home_away_all_data.loc[df_matchup_home_away_all_data['season'] == str(season)]
-        df['spread_counts'] = 1
+        df = df_matchup_home_away_all_data.loc[
+            (df_matchup_home_away_all_data['season'].astype(str) == str(season)) &
+            (df_matchup_home_away_all_data['season_type'].astype(str) == "regular")
+            ]
         fig = px.bar(
             df,
             x="week",
             y="points",
             barmode="group",
             color='team',
-            color_discrete_map=team_colors
+            color_discrete_map=team_colors,
+            facet_col = "season_type"
         )
         fig.update_xaxes(type='category')  # Ensure x-axis shows all values
+        #fig.show()
         figures_points.append(fig)
 
     for season in seasons:
-        df = df_matchup_home_away_all_data.loc[df_matchup_home_away_all_data['season'] == str(season)]
+        df = df_matchup_home_away_all_data.loc[
+            (df_matchup_home_away_all_data['season'].astype(str) == str(season)) &
+            (df_matchup_home_away_all_data['season_type'].astype(str) == "regular")
+            ]
+        df['spread_counts'] = 1
         fig = px.bar(
             df,
             x="result_of_the_spread",
@@ -161,40 +268,49 @@ def page_2(reporting_year, df_matchup_home_away_all_data, subplot_title, team_co
             row=2,
             col=col
         )
-    '''
-    # Ensure the x-axis and y-axis shows for all subplots
-    for i in range(1, subplot_col_number + 1):
-        fig.update_xaxes(type='linear', row=1, col=i)
-        fig.update_xaxes(type='linear', row=2, col=i)
-        fig.update_yaxes(showticklabels=True, showgrid=True, row=1, col=i)
-        fig.update_yaxes(showticklabels=True, showgrid=True, row=2, col=i)
-    '''
-    # fig.show()
+    #fig.show()
     return (fig)
 
 
 def page_3(reporting_year, df_matchup_home_away_all_data, subplot_title, home_team, away_team, team_colors):
+    def matchup_stats_by_report_year_line(df_in, x_value, y_value, home_team, away_team, reporting_year, team_colors):
+        df = df_in.loc[((df_in['team'] == home_team) | (df_in['team'] == away_team)) & (
+                    df_in['season'].astype(str) == reporting_year)]
+        columns = df.columns
+        values = [df[col] for col in columns]
+        fig = px.line(
+            df,
+            x=x_value,
+            y=y_value,
+            markers=True,
+            color='team',
+            height=400,
+            width=800,
+            color_discrete_map=team_colors
+        )
+        unique_tick = sorted(df[x_value].unique())
+        fig.update_xaxes(tickmode='array', tickvals=unique_tick, tickangle=0, dtick=1)
+        return fig
 
-    fig_offense_passing_success_report_year_line = plays.matchup_stats_by_report_year_line(
+    fig_offense_passing_success_report_year_line = matchup_stats_by_report_year_line(
         df_matchup_home_away_all_data, 'week', 'offense.passingPlays.successRate', home_team, away_team,
         reporting_year, team_colors)
-
-    fig_defense_passing_success_report_year_line = plays.matchup_stats_by_report_year_line(
+    fig_defense_passing_success_report_year_line = matchup_stats_by_report_year_line(
         df_matchup_home_away_all_data, 'week', 'defense.passingPlays.successRate', home_team, away_team,
         reporting_year, team_colors)
 
-    fig_offense_rushing_success_report_year_line = plays.matchup_stats_by_report_year_line(
+    fig_offense_rushing_success_report_year_line = matchup_stats_by_report_year_line(
         df_matchup_home_away_all_data, 'week', 'offense.rushingPlays.successRate', home_team, away_team,
         reporting_year, team_colors)
 
-    fig_defense_rushing_success_report_year_line = plays.matchup_stats_by_report_year_line(
+    fig_defense_rushing_success_report_year_line = matchup_stats_by_report_year_line(
         df_matchup_home_away_all_data, 'week', 'defense.rushingPlays.successRate', home_team, away_team,
         reporting_year, team_colors)
 
-    fig_offense_successRate_report_year_line = plays.matchup_stats_by_report_year_line(
+    fig_offense_successRate_report_year_line = matchup_stats_by_report_year_line(
         df_matchup_home_away_all_data, 'week', 'offense.successRate', home_team, away_team, reporting_year,
         team_colors)
-    fig_defense_successRate_report_year_line = plays.matchup_stats_by_report_year_line(
+    fig_defense_successRate_report_year_line = matchup_stats_by_report_year_line(
         df_matchup_home_away_all_data, 'week', 'defense.successRate', home_team, away_team, reporting_year,
         team_colors)
 
@@ -286,25 +402,62 @@ def page_3(reporting_year, df_matchup_home_away_all_data, subplot_title, home_te
                 row=row,
                 col=col
             )
-    # fig.show()
+    #fig.show()
     return fig
 
 
 def page_4(reporting_year, df_matchup_home_away_all_data, subplot_title, home_team, away_team, team_colors):
-    fig_offense_netPassingYards_report_year_line = plays.matchup_stats_by_report_year_line(
+    def matchup_stats_by_report_year_line(df_in, x_value, y_value, home_team, away_team, reporting_year, team_colors):
+        df = df_in.loc[((df_in['team'] == home_team) | (df_in['team'] == away_team)) & (
+                df_in['season'].astype(str) == reporting_year)]
+        columns = df.columns
+        values = [df[col] for col in columns]
+        fig = px.line(
+            df,
+            x=x_value,
+            y=y_value,
+            markers=True,
+            color='team',
+            height=400,
+            width=800,
+            color_discrete_map=team_colors
+        )
+        unique_tick = sorted(df[x_value].unique())
+        fig.update_xaxes(tickmode='array', tickvals=unique_tick, tickangle=0, dtick=1)
+        return fig
+
+    def matchup_stats_by_report_year_box(df_in, x_value, y_value, home_team, away_team, team_colors):
+        df = df_in.loc[((df_in['team'] == home_team) | (df_in['team'] == away_team))]
+        columns = df.columns
+        values = [df[col] for col in columns]
+        fig = px.box(
+            df,
+            x=x_value,
+            y=y_value,
+            color='team',
+            height=400,
+            width=800,
+            color_discrete_map=team_colors
+        )
+        unique_tick = sorted(df[x_value].unique())
+        fig.update_xaxes(tickmode='array', tickvals=unique_tick, tickangle=0, dtick=1)
+        # fig.show()
+        return fig
+
+    fig_offense_netPassingYards_report_year_line = matchup_stats_by_report_year_line(
         df_matchup_home_away_all_data, 'week', 'offense.successRate', home_team, away_team, reporting_year,
         team_colors)
-    fig_offense_rushingYards_report_year_line = plays.matchup_stats_by_report_year_line(
+    fig_offense_rushingYards_report_year_line = matchup_stats_by_report_year_line(
         df_matchup_home_away_all_data, 'week', 'defense.successRate', home_team, away_team, reporting_year,
         team_colors)
-    fig_epa_offense_line = plays.matchup_stats_by_report_year_line(
+    fig_epa_offense_line = matchup_stats_by_report_year_line(
         df_matchup_home_away_all_data, 'week', 'offense.ppa', home_team, away_team, reporting_year, team_colors)
-    fig_epa_defense_line = plays.matchup_stats_by_report_year_line(
+    fig_epa_defense_line = matchup_stats_by_report_year_line(
         df_matchup_home_away_all_data, 'week', 'defense.ppa', home_team, away_team, reporting_year, team_colors)
-    fig_epa_per_game_offense_by_season_box = plays.matchup_stats_by_report_year_box(
+    fig_epa_per_game_offense_by_season_box = matchup_stats_by_report_year_box(
         df_matchup_home_away_all_data, 'season', 'epa_per_game_offense.overall', home_team, away_team,
         team_colors)
-    fig_epa_per_game_defense_by_season_box = plays.matchup_stats_by_report_year_box(
+    fig_epa_per_game_defense_by_season_box = matchup_stats_by_report_year_box(
         df_matchup_home_away_all_data, 'season', 'epa_per_game_defense.overall', home_team, away_team,
         team_colors)
 
@@ -397,23 +550,39 @@ def page_4(reporting_year, df_matchup_home_away_all_data, subplot_title, home_te
                 row=row,
                 col=col
             )
-    # fig.show()
+    #fig.show()
     return fig
 
 
 def page_5(reporting_year, df_matchup_home_away_all_data, subplot_title, home_team, away_team, team_colors):
-    fig_offense_zscore_final_report_year_line = plays.matchup_stats_by_report_year_line(
-        df_matchup_home_away_all_data, 'season', 'offense_zscore_final', home_team, away_team, reporting_year,
+    def matchup_stats_by_multi_year_line(df_in, x_value, y_value, home_team, away_team, team_colors):
+        df = df_in.loc[((df_in['team'] == home_team) | (df_in['team'] == away_team))]
+        columns = df.columns
+        values = [df[col] for col in columns]
+        fig = px.line(
+            df,
+            x=x_value,
+            y=y_value,
+            markers=True,
+            color='team',
+            height=400,
+            width=800,
+            color_discrete_map=team_colors
+        )
+        unique_tick = sorted(df[x_value].unique())
+        fig.update_xaxes(tickmode='array', tickvals=unique_tick, tickangle=0, dtick=1)
+        return fig
+
+    fig_offense_zscore_final_report_year_line = matchup_stats_by_multi_year_line(
+        df_matchup_home_away_all_data, 'season', 'offense_zscore_final', home_team, away_team,
         team_colors)
-    fig_defense_zscore_final_report_year_line = plays.matchup_stats_by_report_year_line(
-        df_matchup_home_away_all_data, 'season', 'defense_zscore_final', home_team, away_team, reporting_year,
+    fig_defense_zscore_final_report_year_line = matchup_stats_by_multi_year_line(
+        df_matchup_home_away_all_data, 'season', 'defense_zscore_final', home_team, away_team,
         team_colors)
-    fig_specialteams_zscore_final_report_year_line = plays.matchup_stats_by_report_year_line(
-        df_matchup_home_away_all_data, 'season', 'specialteams_zscore_final', home_team, away_team,
-        reporting_year, team_colors)
-    fig_total_zscore_report_year_line = plays.matchup_stats_by_report_year_line(
-        df_matchup_home_away_all_data, 'season', 'total_zscore', home_team, away_team, reporting_year,
-        team_colors)
+    fig_specialteams_zscore_final_report_year_line = matchup_stats_by_multi_year_line(
+        df_matchup_home_away_all_data, 'season', 'specialteams_zscore_final', home_team, away_team, team_colors)
+    fig_total_zscore_report_year_line = matchup_stats_by_multi_year_line(
+        df_matchup_home_away_all_data, 'season', 'total_zscore', home_team, away_team, team_colors)
 
     subplot_rows = 2
     subplot_cols = 2
@@ -487,42 +656,32 @@ def page_5(reporting_year, df_matchup_home_away_all_data, subplot_title, home_te
                 col=col
             )
 
-    # fig.show()
+    #fig.show()
     return fig
 
 
 def page_6(cfb_season_stats_by_season, home_team, away_team, subplot_title):
-    fig_matchup_stats_offense_table = plays.matchup_stats_table(cfb_season_stats_by_season, home_team,
+    fig_matchup_stats_offense_table = matchup_stats_table(cfb_season_stats_by_season, home_team,
                                                                 away_team, 'offense')
-    fig_matchup_stats_offense_downs_table = plays.matchup_stats_table(cfb_season_stats_by_season, home_team,
+    fig_matchup_stats_offense_downs_table = matchup_stats_table(cfb_season_stats_by_season, home_team,
                                                                       away_team, 'offense_downs')
-    fig_matchup_stats_defense_table = plays.matchup_stats_table(cfb_season_stats_by_season, home_team,
-                                                                away_team, 'defense')
-    fig_matchup_stats_special_teams_table = plays.matchup_stats_table(cfb_season_stats_by_season, home_team,
-                                                                      away_team, 'special_teams')
 
     fig = make_subplots(
-        rows=4,
+        rows=2,
         cols=1,
         subplot_titles=[
             'Offense Stats',
             'Offense Downs Stats',
-            'Defense Stats',
-            'Special Teams Stats',
         ],
         specs=[[{"type": "table"}],
                [{"type": "table"}],
-               [{"type": "table"}],
-               [{"type": "table"}]]
+               ]
     )
     for trace in fig_matchup_stats_offense_table.data:
         fig.add_trace(trace, row=1, col=1)
     for trace in fig_matchup_stats_offense_downs_table.data:
         fig.add_trace(trace, row=2, col=1)
-    for trace in fig_matchup_stats_defense_table.data:
-        fig.add_trace(trace, row=3, col=1)
-    for trace in fig_matchup_stats_special_teams_table.data:
-        fig.add_trace(trace, row=4, col=1)
+
 
     fig.update_layout(
         height=1200,  # Adjust height as needed
@@ -532,11 +691,40 @@ def page_6(cfb_season_stats_by_season, home_team, away_team, subplot_title):
     # fig.show()
     return fig
 
+def page_7(cfb_season_stats_by_season, home_team, away_team, subplot_title):
+    fig_matchup_stats_defense_table = matchup_stats_table(cfb_season_stats_by_season, home_team,
+                                                                away_team, 'defense')
+    fig_matchup_stats_special_teams_table = matchup_stats_table(cfb_season_stats_by_season, home_team,
+                                                                      away_team, 'special_teams')
 
-def page_7(player_stat_data_report_year, home_team, away_team, report_year, subplot_title):
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        subplot_titles=[
+            'Defense Stats',
+            'Special Teams Stats',
+        ],
+        specs=[[{"type": "table"}],
+               [{"type": "table"}],
+               ]
+    )
+    for trace in fig_matchup_stats_defense_table.data:
+        fig.add_trace(trace, row=1, col=1)
+    for trace in fig_matchup_stats_special_teams_table.data:
+        fig.add_trace(trace, row=2, col=1)
+
+    fig.update_layout(
+        height=1200,  # Adjust height as needed
+        width=1200,  # Adjust width as needed
+        title_text=subplot_title,
+    )
+    # fig.show()
+    return fig
+
+def page_8(player_stat_data_report_year, home_team, away_team, report_year, subplot_title):
     player_data = player_stat_data_report_year.loc[((player_stat_data_report_year['team_roster'] == home_team) | \
                                                     (player_stat_data_report_year['team_roster'] == away_team)) & \
-                                                   (player_stat_data_report_year['season_roster'] == report_year)]
+                                                   (player_stat_data_report_year['season_roster'].astype(str) == report_year)]
     player_data.sort_values(by=['team_roster', 'season_roster', 'position', 'year'],
                             ascending=[True, True, True, False], inplace=True)
     player_data_col = ['team_roster', 'season_roster', 'playerId', 'player', 'position', 'year', 'team_stat',
@@ -624,7 +812,7 @@ def page_7(player_stat_data_report_year, home_team, away_team, report_year, subp
     return fig
 
 
-def page_8(player_stat_data_report_year, home_team, away_team, report_year, subplot_title):
+def page_9(player_stat_data_report_year, home_team, away_team, report_year, subplot_title):
     player_data = player_stat_data_report_year.loc[((player_stat_data_report_year['team_roster'] == home_team) | (
                 player_stat_data_report_year['team_roster'] == away_team)) & (player_stat_data_report_year[
                                                                                   'season_roster'] == report_year)]
@@ -715,7 +903,7 @@ def page_8(player_stat_data_report_year, home_team, away_team, report_year, subp
     return fig
 
 
-def page_9(player_stat_data_report_year, home_team, away_team, report_year, subplot_title):
+def page_10(player_stat_data_report_year, home_team, away_team, report_year, subplot_title):
     player_data = player_stat_data_report_year.loc[((player_stat_data_report_year['team_roster'] == home_team) | (
                 player_stat_data_report_year['team_roster'] == away_team)) & (player_stat_data_report_year[
                                                                                   'season_roster'] == report_year)]
@@ -806,7 +994,7 @@ def page_9(player_stat_data_report_year, home_team, away_team, report_year, subp
     return fig
 
 
-def page_10(player_stat_data_report_year, home_team, away_team, report_year, subplot_title):
+def page_11(player_stat_data_report_year, home_team, away_team, report_year, subplot_title):
     player_data = player_stat_data_report_year.loc[((player_stat_data_report_year['team_roster'] == home_team) | (
                 player_stat_data_report_year['team_roster'] == away_team)) & (player_stat_data_report_year[
                                                                                   'season_roster'] == report_year)]

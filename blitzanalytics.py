@@ -11,6 +11,8 @@ parser.add_argument("-d", "--delete_all_tables", action='store_true',
                     help="Delete all DB tables if the DB is taking up too much space. Run the program with -p after to re-populate the DB.")
 parser.add_argument("-s", "--skip_extract", action='store_true',
                     help="Skip the data extraction process if new data is not needed")
+parser.add_argument("-t", "--skip_transform", action='store_true',
+                    help="Skip the data transform process if transforming data is not needed")
 parser.add_argument("-y", "--report_year", type=str,
                     help="Generate a report from the defined year")
 parser.add_argument("-w", "--report_week", type=str,
@@ -27,10 +29,10 @@ if args.skip_extract:
 else:
     skip_extract = 0
 
-#user_arg_report_year = args.report_year
-#user_arg_report_week = args.report_week
-#user_arg_report_season_type = args.season_type
-
+if args.skip_transform:
+    skip_transform = 1
+else:
+    skip_transform = 0
 
 def extract_cfb_data(arg_skip_extract, status_existing_data, years, report_year):
     # Extract College Football Data
@@ -63,20 +65,27 @@ def extract_cfb_data(arg_skip_extract, status_existing_data, years, report_year)
             years = default_years
             extract_cfbd(years)
 
-def transform_cfb_data_from_cfbd():
-    # Transform the College Football Data Datasets
-    transform.season_stats()
-    transform.games_and_stats()
-    transform.games_and_aggregate_scores()
-    transform.odds()
-    transform.epa()
-    transform.polls()
-    transform.team_records()
-    transform.stats_per_game()
-    transform.team_info()
-    transform.schedule()
-    transform.player_stats_and_team_roster()
-    transform.prep_data_for_reporting()
+def transform_cfb_data_from_cfbd(arg_skip_transform):
+    def transform_cfbd():
+        #Transform the College Football Data Datasets
+        transform.season_stats()
+        transform.games_and_stats()
+        transform.games_and_aggregate_scores()
+        transform.odds()
+        transform.epa()
+        transform.polls()
+        transform.team_records()
+        transform.stats_per_game()
+        transform.team_info()
+        transform.schedule()
+        transform.player_stats_and_team_roster()
+        transform.prep_data_for_reporting()
+
+    if arg_skip_transform == 1:
+        print("Skipping data transform")
+
+    else:
+        transform_cfbd()
 
 def reporting_cfb_data_from_cfbd():
     # Create Reports from Transformed College Football Data
@@ -93,6 +102,6 @@ if __name__ == '__main__':
     pregame.filepath_check(default_report_year)
     status_existing_data = pregame.check_existing_sqlite_data(default_years)
     extract_cfb_data(skip_extract, status_existing_data, default_years, default_report_year)
-    transform_cfb_data_from_cfbd()
+    transform_cfb_data_from_cfbd(skip_transform)
     reporting_cfb_data_from_cfbd()
     exit()

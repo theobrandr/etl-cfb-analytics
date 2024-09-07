@@ -357,6 +357,7 @@ def polls():
     print(df_cfb_ranking_all_drop)
     columns_to_int = ['Playoff Committee Rankings', 'Coaches Poll', 'AP Top 25']
     df_cfb_ranking_all_drop[columns_to_int] = df_cfb_ranking_all_drop[columns_to_int].apply(pd.to_numeric, errors='coerce').astype('int')
+    df_cfb_ranking_all_drop['season_type'] = "regular"
     df_cfb_ranking_all_updated = df_cfb_ranking_all_drop
 
     # Insert the transformed data into the DB
@@ -449,7 +450,6 @@ def prep_data_for_reporting():
     df_cfb_team_info = remove_df_timestamp(sqlite_query_table('cfb_transform_team_info'))
     df_cfb_season_stats_all = remove_df_timestamp(sqlite_query_table('cfb_transform_season_stats'))
 
-
     # Get unique values from multiple columns
     unique_teams = df_cfb_expand_matchup['team'].unique()
     unique_seasons = df_cfb_expand_matchup['season'].unique()
@@ -465,44 +465,50 @@ def prep_data_for_reporting():
     df_base_season_games.sort_values(by=['team', 'season', 'sort_order', 'week'], ascending=[True, True, True, True], inplace=True)
     df_base_season_games.drop(columns='sort_order', inplace=True)
 
-    df_cfb_expand_matchup_sel_col = df_cfb_expand_matchup[['team', 'season', 'week', 'season_type', 'points', 'home_vs_away']]
+    df_cfb_expand_matchup_sel_col = df_cfb_expand_matchup[['team', 'season', 'week', 'season_type', 'points', 'home_vs_away', 'id']]
     df_cfb_team_info_sel_col = df_cfb_team_info[['team','abbreviation','conference','classification','color','alt_color']]
 
     df_base_team_season_games = pd.merge(df_base_season_games,
                                                  df_cfb_team_info_sel_col,
-                                                 left_on=['team'],
-                                                 right_on=['team'],
+                                                 on=['team'],
                                                  how='left')
 
     #Transform df's with stats and merge on games
     df_base_team_season_games_matchup = pd.merge(df_base_team_season_games,
                                                  df_cfb_expand_matchup_sel_col,
-                                                 left_on=['team', 'season', 'week', 'season_type'],
-                                                 right_on=['team', 'season', 'week', 'season_type'],
+                                                 on=['team', 'season', 'season_type', 'week'],
                                                  how='left')
 
     df_base_team_season_games_matchup_ranking = pd.merge(df_base_team_season_games_matchup,
                                         df_cfb_ranking_all_updated,
-                                        left_on=['team', 'season', 'week'],
-                                        right_on=['team', 'season', 'week'],
+                                        on=['team', 'season', 'week', 'season_type'],
                                         how='left')
     df_base_team_season_games_matchup_ranking_epa = pd.merge(df_base_team_season_games_matchup_ranking,
                                         df_cfb_epa_per_game,
-                                        left_on=['team', 'season', 'week', 'conference'],
-                                        right_on=['team', 'season', 'week', 'conference'],
+                                        on=['id', 'team'],
+                                        suffixes=('', '_right_df'),
                                         how='left')
+    df_base_team_season_games_matchup_ranking_epa = df_base_team_season_games_matchup_ranking_epa.drop(
+        df_base_team_season_games_matchup_ranking_epa.filter(like='_right_df').columns, axis=1)
+
     df_base_team_season_games_matchup_ranking_epa_odds = pd.merge(df_base_team_season_games_matchup_ranking_epa,
                                         df_cfb_odds_per_game_with_calc,
-                                        left_on=['team', 'season', 'week'],
-                                        right_on=['team', 'season', 'week'],
+                                        on=['id', 'team'],
+                                        suffixes=('', '_right_df'),
                                         how='left')
+    df_base_team_season_games_matchup_ranking_epa_odds = df_base_team_season_games_matchup_ranking_epa_odds.drop(
+        df_base_team_season_games_matchup_ranking_epa_odds.filter(like='_right_df').columns, axis=1)
+
     df_base_team_season_games_matchup_ranking_epa_odds_stats = pd.merge(df_base_team_season_games_matchup_ranking_epa_odds,
                                         df_cfb_stats_per_game,
-                                        left_on=['team', 'season', 'week'],
-                                        right_on=['team', 'season', 'week'],
+                                        on=['id', 'team'],
+                                        suffixes=('', '_right_df'),
                                         how='left')
 
-    cfb_team_season_games_all_stats = df_base_team_season_games_matchup_ranking_epa_odds_stats.drop(columns=['id_x', 'id_y', 'id'])
+    df_base_team_season_games_matchup_ranking_epa_odds_stats = df_base_team_season_games_matchup_ranking_epa_odds_stats.drop(
+        df_base_team_season_games_matchup_ranking_epa_odds_stats.filter(like='_right_df').columns, axis=1)
+
+    cfb_team_season_games_all_stats = df_base_team_season_games_matchup_ranking_epa_odds_stats.fillna(0)
     cfb_season_games_matchups = df_cfb_season_games_matchups
 
     # Insert the transformed data into the DB
