@@ -269,3 +269,39 @@ def cfbd_stats_per_game(years):
             df_cfbd_data['season'] = year
             insert_cfbd_to_sqlite('cfb_extract_stats_per_game', df_cfbd_data)
             remove_duplicate_data_with_gameid_sqlite('cfb_extract_stats_per_game')
+
+def cfbd_player_stats_per_season(years):
+    print("Extracting CFBD Player Stats Per Season")
+    for year in years:
+        request_url = str(cfb_url + str('stats/player/season?year=' + str(year)))
+        response_json = cfbd_api_request(request_url)
+        df_cfbd_data = default_json_to_df(response_json)
+        if df_cfbd_data.empty:
+            continue
+        else:
+            df_cfbd_data['season'] = year
+            insert_cfbd_to_sqlite('cfb_extract_player_stats_per_season', df_cfbd_data)
+
+def cfbd_player_team_roster(years):
+    print("Extracting CFBD Player Team Roster")
+    for year in years:
+        request_url = str(cfb_url + str('roster?year=' + str(year)))
+        response_json = cfbd_api_request(request_url)
+        df_cfbd_data_original = default_json_to_df(response_json)
+        df_cfbd_data = df_cfbd_data_original[['id', 'first_name','last_name','team','position','year','timestamp']]
+        if df_cfbd_data.empty:
+            continue
+        else:
+            df_cfbd_data['season'] = year
+            insert_cfbd_to_sqlite('cfb_extract_player_team_roster', df_cfbd_data)
+def cfbd_player_usage_per_season(years):
+    print("Extracting CFBD Usage Stats Per Season")
+    for year in years:
+        request_url = str(cfb_url + str('player/usage?year=' + str(year)))
+        response_json = cfbd_api_request(request_url)
+        df_cfbd_data = default_json_to_df(response_json)
+        if df_cfbd_data.empty:
+            continue
+        else:
+            df_cfbd_data['season'] = year
+            insert_cfbd_to_sqlite('cfb_extract_player_usage_per_season', df_cfbd_data)
