@@ -193,7 +193,7 @@ def page_2(reporting_year, df_matchup_home_away_all_data, subplot_title, team_co
             (df_matchup_home_away_all_data['season_type'].astype(str) == "regular")
             ]
         df['spread_counts'] = 1
-        fig = px.bar(
+        fig = px.histogram(
             df,
             x="result_of_the_spread",
             y="spread_counts",
