@@ -60,6 +60,14 @@ app.layout = html.Div([
         dcc.Graph(id='defense-pass-success-line', style={'display': 'inline-block', 'width': '49%'}),
         dcc.Graph(id='defense-rush-success-line', style={'display': 'inline-block', 'width': '49%'})
     ], style={'display': 'flex', 'justify-content': 'space-between'}),
+    html.Div([
+        dcc.Graph(id='offense-successRate-line', style={'display': 'inline-block', 'width': '49%'}),
+        dcc.Graph(id='defense-successRate-line', style={'display': 'inline-block', 'width': '49%'})
+    ], style={'display': 'flex', 'justify-content': 'space-between'}),
+    html.Div([
+        dcc.Graph(id='offense-ppa-line', style={'display': 'inline-block', 'width': '49%'}),
+        dcc.Graph(id='defense-ppa-line', style={'display': 'inline-block', 'width': '49%'})
+    ], style={'display': 'flex', 'justify-content': 'space-between'}),
 
 ])
 
@@ -91,23 +99,21 @@ def matchup_from_filter(season, season_type, week, cfb_season_games_matchups):
     Output('offense-pass-success-line', 'figure'),
     Output('offense-rush-success-line', 'figure'),
     Output('defense-pass-success-line', 'figure'),
-    Output('defense-rush-success-line', 'figure')
+    Output('defense-rush-success-line', 'figure'),
+    Output('offense-successRate-line', 'figure'),
+    Output('defense-successRate-line', 'figure'),
+    Output('offense-ppa-line', 'figure'),
+    Output('defense-ppa-line', 'figure')
     ],
     [Input('matchup-dropdown', 'value')]
 )
 def generate_visualization_figures(matchup):
     # Define the list of Output IDs for the tuple below
     output_graphs = [
-        'points-by-season-bar',
-        'spread-by-season-hist',
-        'offense-pass-success-line',
-        'offense-rush-success-line',
-        'defense-pass-success-line',
-        'defense-rush-success-line',
     ]
     # If no matchup is selected, return an empty figure for each graph dynamically
     if matchup is None:
-        return tuple({} for _ in range(len(output_graphs)))
+        return {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
 
     # Filter data based on selected matchup
     df_matchup = cfb_season_games_matchups.loc[
@@ -137,12 +143,31 @@ def generate_visualization_figures(matchup):
                                                                             'week',
                                                                             'defense.passingPlays.successRate',
                                                                             'Defense Passing Plays Success Rate')
-    fig_defense_pass_success_line = vis_stats_by_matchup_year_line(df_matchup_home_away_all_data, season,
-                                                                            'week',
-                                                                            'defense.rushingPlays.successRate',
-                                                                            'Defense Rushing Plays Success Rate')
+    fig_defense_rush_success_line = vis_stats_by_matchup_year_line(df_matchup_home_away_all_data, season,
+                                                                    'week',
+                                                                    'defense.rushingPlays.successRate',
+                                                                    'Defense Rushing Plays Success Rate')
+    fig_offense_success_rate_line = vis_stats_by_matchup_year_line(df_matchup_home_away_all_data, season,
+                                                                   'week',
+                                                                   'offense.successRate',
+                                                                   'Offense Success Rate')
+    fig_defense_success_rate_line = vis_stats_by_matchup_year_line(df_matchup_home_away_all_data, season,
+                                                                   'week',
+                                                                   'defense.successRate',
+                                                                   'Defense Success Rate')
+    fig_offense_ppa_line = vis_stats_by_matchup_year_line(df_matchup_home_away_all_data, season,
+                                                                   'week',
+                                                                   'offense.ppa',
+                                                                   'Offense PPA')
+    fig_defense_ppa_line = vis_stats_by_matchup_year_line(df_matchup_home_away_all_data, season,
+                                                                   'week',
+                                                                   'defense.ppa',
+                                                                   'Defense PPA')
+
     return (fig_points_by_season_bar, fig_spread_by_season_hist, fig_offense_pass_success_line,
-            fig_offense_rush_success_line, fig_defense_pass_success_line, fig_defense_pass_success_line )
+            fig_offense_rush_success_line, fig_defense_pass_success_line, fig_defense_rush_success_line,
+            fig_offense_success_rate_line, fig_defense_success_rate_line, fig_offense_ppa_line, fig_defense_ppa_line
+            )
 
 def vis_points_by_season(df):
     unique_seasons = sorted(df['season'].unique())  # Sort if needed
