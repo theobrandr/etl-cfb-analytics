@@ -149,14 +149,29 @@ def games_and_stats():
     cfb_season_games_all_date_col = df_cfb_season_games_all['date']
     df_cfb_season_games_all.drop(labels=['date'], axis=1, inplace=True)
     df_cfb_season_games_all.insert(6, 'date', cfb_season_games_all_date_col)
+
+    # Correct data types of original matchup columns
+    df_cfb_season_games_all.fillna(0, inplace=True)
+    columns_to_int_original_df = ['id', 'season', 'week', 'home_points', 'away_points']
+    df_cfb_season_games_all[columns_to_int_original_df] = df_cfb_season_games_all[columns_to_int_original_df].apply(
+        pd.to_numeric, errors='coerce')
+    df_cfb_season_games_all[columns_to_int_original_df] = df_cfb_season_games_all[columns_to_int_original_df].astype(
+        'float').astype('int')
+
+    df_cfb_season_games_all['home_win_loss_calc'] = df_cfb_season_games_all['home_points'] - df_cfb_season_games_all['away_points']
+    df_cfb_season_games_all['home_win_loss'] = df_cfb_season_games_all['home_win_loss_calc'].apply(
+        lambda x: 'win' if x > 0 else ('loss' if x < 0 else 'No Data'))
+    df_cfb_season_games_all['away_win_loss_calc'] = df_cfb_season_games_all['away_points'] - df_cfb_season_games_all['home_points']
+    df_cfb_season_games_all['away_win_loss'] = df_cfb_season_games_all['away_win_loss_calc'].apply(
+        lambda x: 'win' if x > 0 else ('loss' if x < 0 else 'No Data'))
     #df_cfb_season_games_all["Season + Week"] = df_cfb_season_games_all["season"].astype(str) + "_" + df_cfb_season_games_all["week"].astype(str)
 
     #Split the home v away into 2 df
-    df_cfb_season_games_all_home = df_cfb_season_games_all[["id", "Game Matchup", "season", "season_type", "week", "start_date", "date", "conference_game", "home_team", "home_conference", "home_points"]]
-    df_cfb_season_games_all_home.rename(columns={"home_team": "team", "home_conference": "conference","home_points": "points"},inplace=True)
+    df_cfb_season_games_all_home = df_cfb_season_games_all[["id", "Game Matchup", "season", "season_type", "week", "start_date", "date", "conference_game", "home_team", "home_conference", "home_points", "home_line_scores", "home_win_loss"]]
+    df_cfb_season_games_all_home.rename(columns={"home_team": "team", "home_conference": "conference", "home_points": "points", "home_line_scores": "box_score", "home_win_loss": "win_loss"},inplace=True)
     df_cfb_season_games_all_home.insert(7, "home_vs_away", 'home')
-    df_cfb_season_games_all_away = df_cfb_season_games_all[["id", "Game Matchup", "season", "season_type", "week", "start_date","date", "conference_game", "away_team", "away_conference", "away_points"]]
-    df_cfb_season_games_all_away.rename(columns={"away_team": "team", "away_conference": "conference", "away_points": "points"},inplace=True)
+    df_cfb_season_games_all_away = df_cfb_season_games_all[["id", "Game Matchup", "season", "season_type", "week", "start_date","date", "conference_game", "away_team", "away_conference", "away_points", "away_line_scores", "away_win_loss"]]
+    df_cfb_season_games_all_away.rename(columns={"away_team": "team", "away_conference": "conference", "away_points": "points", "away_line_scores": "box_score", "away_win_loss": "win_loss"},inplace=True)
     df_cfb_season_games_all_away.insert(7, "home_vs_away", 'away')
 
     #Merge home and away df back together and sort them into order
@@ -164,7 +179,7 @@ def games_and_stats():
     df_cfb_season_games_all_append.sort_values(by=['start_date','id'], inplace=True, ascending=True)
 
     #Select Columns from original dataframe cfb_season_games_all to join onto updated dataframe. This will include more home and away info
-    df_cfb_season_games_original_sel_col = df_cfb_season_games_all[['id', 'home_team', 'home_points', 'home_line_scores', 'away_team', 'away_points', 'away_line_scores']]
+    df_cfb_season_games_original_sel_col = df_cfb_season_games_all[['id', 'home_team', 'home_points', 'home_line_scores', 'home_win_loss', 'home_win_loss_calc', 'away_team', 'away_points', 'away_line_scores','away_win_loss', 'away_win_loss_calc' ]]
     df_cfb_season_games_all_append_and_original_sel_col_joined = pd.merge(df_cfb_season_games_all_append,
                                                           df_cfb_season_games_original_sel_col,
                                                           left_on='id', right_on='id', how='left')
@@ -175,11 +190,6 @@ def games_and_stats():
     columns_to_int = ['id', 'season', 'week', 'points']
     df_cfb_season_games_all_updated[columns_to_int] = df_cfb_season_games_all_updated[columns_to_int].apply(pd.to_numeric, errors='coerce')
     df_cfb_season_games_all_updated[columns_to_int] = df_cfb_season_games_all_updated[columns_to_int].astype('float').astype('int')
-
-    #Correct data types of original matchup columns
-    columns_to_int_original_df = ['id', 'season', 'week']
-    df_cfb_season_games_all[columns_to_int_original_df] = df_cfb_season_games_all[columns_to_int_original_df].apply(pd.to_numeric, errors='coerce')
-    df_cfb_season_games_all[columns_to_int_original_df] = df_cfb_season_games_all[columns_to_int_original_df].astype('float').astype('int')
 
     # Insert the transformed data into the DB
     insert_cfbd_to_sqlite('cfb_transform_season_games_expand_matchup', df_cfb_season_games_all_updated)
@@ -465,7 +475,8 @@ def prep_data_for_reporting():
     df_base_season_games.sort_values(by=['team', 'season', 'sort_order', 'week'], ascending=[True, True, True, True], inplace=True)
     df_base_season_games.drop(columns='sort_order', inplace=True)
 
-    df_cfb_expand_matchup_sel_col = df_cfb_expand_matchup[['team', 'season', 'week', 'season_type', 'points', 'home_vs_away', 'id']]
+    df_cfb_expand_matchup_sel_col = df_cfb_expand_matchup[['team', 'season', 'week', 'season_type',
+                                                           'Game Matchup', 'points', 'home_vs_away', 'id', 'box_score', 'win_loss' ]]
     df_cfb_team_info_sel_col = df_cfb_team_info[['team','abbreviation','conference','classification','color','alt_color']]
 
     df_base_team_season_games = pd.merge(df_base_season_games,

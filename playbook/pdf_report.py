@@ -406,10 +406,27 @@ def page_3(reporting_year, df_matchup_home_away_all_data, subplot_title, home_te
     return fig
 
 
-def page_4(reporting_year, df_matchup_home_away_all_data, subplot_title, home_team, away_team, team_colors):
+def page_4(reporting_year, df_matchup_home_away_all_data, cfb_season_summary_matchup, subplot_title, home_team, away_team, team_colors):
     def matchup_stats_by_report_year_line(df_in, x_value, y_value, home_team, away_team, reporting_year, team_colors):
         df = df_in.loc[((df_in['team'] == home_team) | (df_in['team'] == away_team)) & (
                 df_in['season'].astype(str) == reporting_year)]
+        columns = df.columns
+        values = [df[col] for col in columns]
+        fig = px.line(
+            df,
+            x=x_value,
+            y=y_value,
+            markers=True,
+            color='team',
+            height=400,
+            width=800,
+            color_discrete_map=team_colors
+        )
+        unique_tick = sorted(df[x_value].unique())
+        fig.update_xaxes(tickmode='array', tickvals=unique_tick, tickangle=0, dtick=1)
+        return fig
+
+    def matchup_stats_by_season_line(df, x_value, y_value, home_team, away_team, team_colors):
         columns = df.columns
         values = [df[col] for col in columns]
         fig = px.line(
@@ -444,12 +461,10 @@ def page_4(reporting_year, df_matchup_home_away_all_data, subplot_title, home_te
         # fig.show()
         return fig
 
-    fig_offense_netPassingYards_report_year_line = matchup_stats_by_report_year_line(
-        df_matchup_home_away_all_data, 'week', 'offense.successRate', home_team, away_team, reporting_year,
-        team_colors)
-    fig_offense_rushingYards_report_year_line = matchup_stats_by_report_year_line(
-        df_matchup_home_away_all_data, 'week', 'defense.successRate', home_team, away_team, reporting_year,
-        team_colors)
+    fig_offense_netPassingYards_report_year_line = matchup_stats_by_season_line(
+        cfb_season_summary_matchup, 'season', 'offense_netPassingYards', home_team, away_team, team_colors)
+    fig_offense_rushingYards_report_year_line = matchup_stats_by_season_line(
+        cfb_season_summary_matchup, 'season', 'offense_rushingYards', home_team, away_team, team_colors)
     fig_epa_offense_line = matchup_stats_by_report_year_line(
         df_matchup_home_away_all_data, 'week', 'offense.ppa', home_team, away_team, reporting_year, team_colors)
     fig_epa_defense_line = matchup_stats_by_report_year_line(

@@ -21,7 +21,8 @@ parser.add_argument("-w", "--report_week", type=str,
 parser.add_argument("-p", "--season_type", type=str,
                     help="Indicate the season type, postseason or regular. The default option is regular.")
 parser.add_argument("-r", "--pdf_report", action='store_true',
-                    help="Skip the BlizAnalytics visualization and generate a PDF report instead")
+                    help="Skip visualization and generate PDF report")
+
 args = parser.parse_args()
 
 if args.delete_all_tables:
