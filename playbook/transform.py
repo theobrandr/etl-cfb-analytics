@@ -364,7 +364,6 @@ def polls():
     df_cfb_ranking_all_drop = df_cfb_ranking_all_rename.drop(columns=['AFCA Division II Coaches Poll','AFCA Division III Coaches Poll','FCS Coaches Poll'], errors='ignore')
     df_cfb_ranking_all_drop.fillna(0, inplace=True)
     df_cfb_ranking_all_drop['Playoff Committee Rankings'] = df_cfb_ranking_all_drop['Playoff Committee Rankings'].replace(r'^\s*$', 0, regex=True).fillna(0).astype(str)
-    print(df_cfb_ranking_all_drop)
     columns_to_int = ['Playoff Committee Rankings', 'Coaches Poll', 'AP Top 25']
     df_cfb_ranking_all_drop[columns_to_int] = df_cfb_ranking_all_drop[columns_to_int].apply(pd.to_numeric, errors='coerce').astype('int')
     df_cfb_ranking_all_drop['season_type'] = "regular"
@@ -404,6 +403,7 @@ def team_info():
 
     df_cfb_team_info_rename = df_cfb_team_info.rename(columns={"school": "team"})
     df_cfb_team_info_updated = df_cfb_team_info_rename.loc[df_cfb_team_info_rename['classification'].str.contains("fbs|fcs", case=False, na=False)]
+    df_cfb_team_info_updated['color'].fillna('#000000', inplace=True)
 
     #Insert the transformed data into the DB
     insert_cfbd_to_sqlite('cfb_transform_team_info', df_cfb_team_info_updated)
@@ -444,8 +444,10 @@ def player_stats_and_team_roster():
                                                   on=['playerId'], how='outer')
     df_player_roster_season_stats_join.sort_values(by=['playerId', 'season_roster', 'season_stat'], ascending=False, inplace=True)
     df_player_roster_season_stats_join.reset_index(inplace=True)
+    #Remove Season Stats after Season Roster Year
+    df_player_roster_season_stats_join_drop = df_player_roster_season_stats_join[df_player_roster_season_stats_join['season_stat'] <= df_player_roster_season_stats_join['season_roster']]
 
-    insert_cfbd_to_sqlite('cfb_reporting_player_stats_by_season', df_player_roster_season_stats_join)
+    insert_cfbd_to_sqlite('cfb_reporting_player_stats_by_season', df_player_roster_season_stats_join_drop)
     insert_cfbd_to_sqlite('cfb_reporting_player_team_roster', df_player_team_roster)
 
 
