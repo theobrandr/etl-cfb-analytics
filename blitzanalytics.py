@@ -2,10 +2,8 @@ from playbook import pregame
 from playbook import extract
 from playbook import transform
 from playbook import reporting
-from playbook import visualization
 import argparse
-from datetime import date
-from datetime import datetime
+
 
 parser = argparse.ArgumentParser(description='blitzanalytics Arguments')
 parser.add_argument("-d", "--delete_all_tables", action='store_true',
@@ -20,8 +18,6 @@ parser.add_argument("-w", "--report_week", type=str,
                     help="Generate a report from a defined week")
 parser.add_argument("-p", "--season_type", type=str,
                     help="Indicate the season type, postseason or regular. The default option is regular.")
-parser.add_argument("-r", "--pdf_report", action='store_true',
-                    help="Skip visualization and generate PDF report")
 
 args = parser.parse_args()
 
@@ -37,11 +33,6 @@ if args.skip_transform:
     skip_transform = 1
 else:
     skip_transform = 0
-
-if args.pdf_report:
-    pdf_report = 1
-else:
-    pdf_report = 0
 
 def extract_cfb_data(arg_skip_extract, status_existing_data, years, report_year):
     # Extract College Football Data
@@ -96,15 +87,6 @@ def transform_cfb_data_from_cfbd(arg_skip_transform):
     else:
         transform_cfbd()
 
-def reporting_cfb_data_from_cfbd(arg_pdf_report):
-    if arg_pdf_report == 1:
-        print("Skipping BlitzAnalytics Dashboard and generating PDF Reports")
-        # Create Reports from Transformed College Football Data
-        report_year, report_week, report_season_type = reporting.calculate_report_criteria(pregame.timestamp)
-        reporting.matchup_reports_new(report_year, report_week, report_season_type)
-
-    else:
-        visualization.matchup_report()
 
 if __name__ == '__main__':
     print("blitzanalytics: Your Playbook to Success for College Football Data ETL's and Reporting.")
@@ -116,5 +98,5 @@ if __name__ == '__main__':
     status_existing_data = pregame.check_existing_sqlite_data(default_years)
     extract_cfb_data(skip_extract, status_existing_data, default_years, default_report_year)
     transform_cfb_data_from_cfbd(skip_transform)
-    reporting_cfb_data_from_cfbd(pdf_report)
+    reporting.matchup_report()
     exit()
