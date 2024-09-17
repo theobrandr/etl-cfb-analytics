@@ -281,6 +281,8 @@ def cfbd_player_stats_per_season(years):
         else:
             df_cfbd_data['season'] = year
             insert_cfbd_to_sqlite('cfb_extract_player_stats_per_season', df_cfbd_data)
+            remove_duplicate_data_timestamp_only_sqlite('cfb_extract_player_stats_per_season')
+
 
 def cfbd_player_team_roster(years):
     print("Extracting CFBD Player Team Roster")
@@ -294,6 +296,7 @@ def cfbd_player_team_roster(years):
         else:
             df_cfbd_data['season'] = year
             insert_cfbd_to_sqlite('cfb_extract_player_team_roster', df_cfbd_data)
+            remove_duplicate_data_timestamp_only_sqlite('cfb_extract_player_team_roster')
 def cfbd_player_usage_per_season(years):
     print("Extracting CFBD Usage Stats Per Season")
     for year in years:
