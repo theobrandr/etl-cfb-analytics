@@ -46,6 +46,17 @@ def api_key_check():
         ]
         exit('\n'.join(error_message))
 
+def db_folder_check():
+    print("Validating Database Folder exists")
+    cwd = os.getcwd()
+    file_path_dbs = cwd + '/databases/'
+    check_db_folder = os.path.exists(file_path_dbs)
+    if check_db_folder == True:
+        return ()
+    elif check_db_folder == False:
+        os.mkdir(file_path_dbs)
+        return ()
+
 def check_sqllite_db_status():
     # Testing Connection to sqlite CFB.DB
     connection = sqlite3.connect("databases/cfb_cfbd.db")

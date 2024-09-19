@@ -85,6 +85,7 @@ if __name__ == '__main__':
     print("Accretion Data: College Football Data ETL's and Reporting.")
     # Prepare and check the ETL is ready to run
     pregame.api_key_check()
+    pregame.db_folder_check()
     pregame.check_sqllite_db_status()
     default_years, default_report_year = pregame.calculate_default_data_years()
     status_existing_data = pregame.check_existing_sqlite_data(default_years)
