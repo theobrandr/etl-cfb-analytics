@@ -1,5 +1,5 @@
 # Accretion Data
-College Football Data ETL's for advanced metrics, visualization with dash and plotly, and PDF reporting.
+College Football Data ETL's for advanced metrics and visualization with dash + plotly. 
 The program will extract 5 years of college football/cfb data, transform the data, load the data into a local database. 
 Once the ETL is done running, run accretiondata.py and navigate to http://127.0.0.1:8050
 
