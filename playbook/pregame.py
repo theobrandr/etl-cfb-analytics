@@ -142,7 +142,7 @@ def api_key_check():
 
 def check_sqllite_db_status():
     # Testing Connection to sqlite CFB.DB
-    connection = sqlite3.connect("blitzanalytics.db")
+    connection = sqlite3.connect("cfb_cfbd.db")
     cursor = connection.cursor()
     sql_version_query = 'select sqlite_version();'
     cursor.execute(sql_version_query)
@@ -152,7 +152,7 @@ def check_sqllite_db_status():
     connection.close()
 
 def check_sqlite_logging():
-    conn = sqlite3.connect('blitzanalytics.db')
+    conn = sqlite3.connect('cfb_cfbd.db')
     # Check if the table exists
     cursor = conn.cursor()
     cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='blitzanalytics_log'")
@@ -187,7 +187,7 @@ def calculate_default_data_years():
     return default_years, default_current_year
 
 def check_existing_sqlite_data(default_years):
-    conn = sqlite3.connect('blitzanalytics.db')
+    conn = sqlite3.connect('cfb_cfbd.db')
     # Check if the table exists
     cursor = conn.cursor()
     cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='cfb_reporting_all_data'")
@@ -212,7 +212,7 @@ def check_existing_sqlite_data(default_years):
     conn.close()
 
 def sqlite_query_table(table_name):
-    conn = sqlite3.connect('blitzanalytics.db')
+    conn = sqlite3.connect('cfb_cfbd.db')
     #query = f"SELECT * FROM {table_name}"
     query = f"""
         SELECT *
@@ -227,7 +227,7 @@ def delete_all_tables():
     print("Warning, this will delete all the tables in the CFB Database.")
     selector_db_delete = input("Type y to Continue or type any other key to quit:")
     if selector_db_delete == 'y':
-        conn = sqlite3.connect('blitzanalytics.db')
+        conn = sqlite3.connect('cfb_cfbd.db')
         cursor = conn.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = cursor.fetchall()

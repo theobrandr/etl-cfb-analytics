@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 #Local files
-api_files
-reports
-blitzanalytics.db
+cfb_cfbd.db
+cfb.db
+reports/
 

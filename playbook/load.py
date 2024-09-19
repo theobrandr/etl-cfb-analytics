@@ -6,7 +6,7 @@ from datetime import datetime
 from .pregame import timestamp
 
 def sqlite_query_table_by_year(table_name):
-    conn = sqlite3.connect('blitzanalytics.db')
+    conn = sqlite3.connect('cfb_cfbd.db')
     #query = f"SELECT * FROM {table_name}"
     query = f"""
         SELECT t1.*
@@ -23,7 +23,7 @@ def sqlite_query_table_by_year(table_name):
     return df_table
 
 def sqlite_query_table(table_name):
-    conn = sqlite3.connect('blitzanalytics.db')
+    conn = sqlite3.connect('cfb_cfbd.db')
     #query = f"SELECT * FROM {table_name}"
     query = f"""
         SELECT *
@@ -35,7 +35,7 @@ def sqlite_query_table(table_name):
     return df_table
 
 def insert_cfbd_to_sqlite(cfb_table_name,df_cfbd_data):
-    conn = sqlite3.connect('blitzanalytics.db')
+    conn = sqlite3.connect('cfb_cfbd.db')
 
     if 'timestamp' not in df_cfbd_data.columns:
         df_cfbd_data['timestamp'] = timestamp
@@ -43,7 +43,7 @@ def insert_cfbd_to_sqlite(cfb_table_name,df_cfbd_data):
     conn.close()
 
 def insert_data_to_sqlite(data_table_name,df_data):
-    conn = sqlite3.connect('blitzanalytics.db')
+    conn = sqlite3.connect('cfb_cfbd.db')
     if 'timestamp' not in df_data.columns:
         df_data['timestamp'] = timestamp
     df_cfbd_data.to_sql(cfb_table_name, conn, if_exists='append', index=False)

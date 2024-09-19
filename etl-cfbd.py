@@ -12,12 +12,6 @@ parser.add_argument("-s", "--skip_extract", action='store_true',
                     help="Skip the data extraction process if new data is not needed")
 parser.add_argument("-t", "--skip_transform", action='store_true',
                     help="Skip the data transform process if transforming data is not needed")
-parser.add_argument("-y", "--report_year", type=str,
-                    help="Generate a report from the defined year")
-parser.add_argument("-w", "--report_week", type=str,
-                    help="Generate a report from a defined week")
-parser.add_argument("-p", "--season_type", type=str,
-                    help="Indicate the season type, postseason or regular. The default option is regular.")
 
 args = parser.parse_args()
 
@@ -89,7 +83,7 @@ def transform_cfb_data_from_cfbd(arg_skip_transform):
 
 
 if __name__ == '__main__':
-    print("blitzanalytics: Your Playbook to Success for College Football Data ETL's and Reporting.")
+    print("Accretion Data: College Football Data ETL's and Reporting.")
     # Prepare and check the ETL is ready to run
     pregame.api_key_check()
     pregame.check_sqllite_db_status()
@@ -98,5 +92,5 @@ if __name__ == '__main__':
     status_existing_data = pregame.check_existing_sqlite_data(default_years)
     extract_cfb_data(skip_extract, status_existing_data, default_years, default_report_year)
     transform_cfb_data_from_cfbd(skip_transform)
-    reporting.matchup_report()
+    #reporting.matchup_report()
     exit()
