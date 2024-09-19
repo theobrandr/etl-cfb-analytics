@@ -1,4 +1,4 @@
-# BlitzAnalytics
+# Accretion Data
 College Football Data ETL's for advanced metrics, visualization with dash and plotly, and PDF reporting.
 The program will extract 5 years of college football/cfb data, transform the data, load the data into a local database. 
 Once the ETL is done running, the program will be running at http://127.0.0.1:8050
