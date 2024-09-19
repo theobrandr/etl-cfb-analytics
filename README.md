@@ -1,7 +1,8 @@
 # Accretion Data
-College Football Data ETL's for advanced metrics, visualization with dash and plotly, and PDF reporting.
+College Football Data ETL's for advanced metrics and visualization with dash + plotly. 
 The program will extract 5 years of college football/cfb data, transform the data, load the data into a local database. 
-Once the ETL is done running, the program will be running at http://127.0.0.1:8050
+<br>
+Once the ETL is done running, run accretiondata.py and navigate to http://127.0.0.1:8050
 
 
 **Requirements**
@@ -23,23 +24,13 @@ Once the ETL is done running, the program will be running at http://127.0.0.1:80
 **Program Arguments***
 ### Command Line Arguments for Blitz Analytics
 <br>
-  python blitzanalytics.py [-p] [-r REPORT_WEEK] [-y REPORT_YEAR] [-t] [-d] [-s] [-r]
-  <br>
-  --previous_years	-p	Flag	Pull data for the last 5 years. By default, only the current year's data will be pulled.
-  <br>
-  --report_week	-r	String	Specify a week for reporting.
-  <br>
-  --report_year	-y	String	Specify a year for reporting.
-  <br>
-  --season_type	-p	String	Specify 'regular' for Regular Season or 'postseason' for PostSeason.
+  python etl-cfbd.py [-t] [-d] [-s]
   <br>
   --delete_tables	-d	Flag	Delete all DB tables if the database is consuming excessive space.
   <br>
   --skip_extract	-s	Flag	Skip the data extraction process if new data isn't required.
   <br>
   --skip_transform	-t	Flag	Skip the data transformation process if transforming data is not needed.
-  <br>
-  --pdf_report	-r	Flag	Skip visualization and generate a PDF report instead.
   <br>
   <br>
 
