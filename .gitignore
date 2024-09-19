@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 #Local files
-cfb_cfbd.db
-cfb.db
-reports/
+databases/cfb_cfbd.db
+
+
 

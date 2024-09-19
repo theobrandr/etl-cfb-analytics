@@ -34,100 +34,6 @@ cfb_api_key = os.environ.get('env_cfb_api_key')
 cfb_url = 'https://api.collegefootballdata.com/'
 headers_cfb = {'accept': 'application/json', 'Authorization': ('Bearer' + ' ' + str(cfb_api_key)), }
 
-def filepath_check(arg_report_year):
-    # Year and week variables for CFB API
-    report_year = arg_report_year
-    # File path and file variables
-    cwd = os.getcwd()
-    file_env = dotenv.find_dotenv()
-    file_path_sport = cwd
-    file_path_sport_reports = cwd + '/reports/'
-    file_path_sport_reports_cfb = file_path_sport_reports + 'cfb/'
-    file_path_sport_reports_report_year = file_path_sport_reports_cfb + str(report_year) + '/'
-    file_path_sport_reports_report_year_teams = file_path_sport_reports_report_year + 'Teams' + '/'
-    file_path_sport_reports_report_year_regular_season = file_path_sport_reports_report_year + str('regular') + '/'
-    file_path_sport_reports_report_year_post_season = file_path_sport_reports_report_year + str('postseason') + '/'
-
-    check_reports_folder = os.path.exists(file_path_sport_reports)
-    check_reports_folder_cfb = os.path.exists(file_path_sport_reports_cfb)
-    check_reports_folder_report_year = os.path.exists(file_path_sport_reports_report_year)
-    check_reports_folder_report_year_teams = os.path.exists(file_path_sport_reports_report_year_teams)
-    check_reports_folder_report_year_regular_season = os.path.exists(file_path_sport_reports_report_year_regular_season)
-    check_reports_folder_report_year_post_season = os.path.exists(file_path_sport_reports_report_year_post_season)
-
-    def filepath_reports_check():
-        if check_reports_folder == True:
-            return()
-        elif check_reports_folder == False:
-            os.mkdir(file_path_sport_reports)
-            return()
-    def filepath_reports_cfb_check():
-        if check_reports_folder_cfb == True:
-            return()
-        elif check_reports_folder_cfb == False:
-            os.mkdir(file_path_sport_reports_cfb)
-            return()
-
-    def filepath_reports_report_year_check():
-        if check_reports_folder_report_year == True:
-            return()
-        elif check_reports_folder_report_year == False:
-            os.mkdir(file_path_sport_reports_report_year)
-            return()
-
-    def filepath_reports_report_year_teams_check():
-        if check_reports_folder_report_year_teams == True:
-            return()
-        elif check_reports_folder_report_year_teams == False:
-            os.mkdir(file_path_sport_reports_report_year_teams)
-            return()
-
-    def filepath_reports_report_year_regular_season_check():
-        if check_reports_folder_report_year_regular_season == True:
-            return()
-        elif check_reports_folder_report_year_regular_season == False:
-            os.mkdir(file_path_sport_reports_report_year_regular_season)
-            return()
-
-    def filepath_reports_report_year_post_season_check():
-        if check_reports_folder_report_year_post_season == True:
-            return ()
-        elif check_reports_folder_report_year_post_season == False:
-            os.mkdir(file_path_sport_reports_report_year_post_season)
-            return ()
-
-    def filepath_reports_report_year_regular_season_weeks_check():
-        weeks = list(range(1, 16))
-        for week in weeks:
-            path_reports_folder_report_year_regular_season_week = file_path_sport_reports_report_year_regular_season + 'Week_' + str(week) + '/'
-            check_reports_folder_report_year_week_regular_season = os.path.exists(str(path_reports_folder_report_year_regular_season_week))
-            if check_reports_folder_report_year_week_regular_season == True:
-                continue
-            elif check_reports_folder_report_year_week_regular_season == False:
-                os.mkdir(path_reports_folder_report_year_regular_season_week)
-                continue
-    def filepath_reports_report_year_post_season_weeks_check():
-        weeks = list(range(1, 3))
-        for week in weeks:
-            path_reports_folder_report_year_post_season_week = file_path_sport_reports_report_year_post_season + 'Week_' + str(week) + '/'
-            check_reports_folder_report_year_week_post_season = os.path.exists(str(path_reports_folder_report_year_post_season_week))
-            if check_reports_folder_report_year_week_post_season == True:
-                continue
-            elif check_reports_folder_report_year_week_post_season == False:
-                os.mkdir(path_reports_folder_report_year_post_season_week)
-                continue
-
-    filepath_reports_check()
-    filepath_reports_cfb_check()
-    filepath_reports_report_year_check()
-    filepath_reports_report_year_teams_check()
-    filepath_reports_report_year_regular_season_check()
-    filepath_reports_report_year_regular_season_weeks_check()
-    filepath_reports_report_year_post_season_check()
-    filepath_reports_report_year_post_season_weeks_check()
-
-    return(print("Pregame Filepath Checks Complete"))
-
 def api_key_check():
     cfb_api_key = os.environ.get('env_cfb_api_key')
     if len(cfb_api_key) == 64:
@@ -142,7 +48,7 @@ def api_key_check():
 
 def check_sqllite_db_status():
     # Testing Connection to sqlite CFB.DB
-    connection = sqlite3.connect("cfb_cfbd.db")
+    connection = sqlite3.connect("databases/cfb_cfbd.db")
     cursor = connection.cursor()
     sql_version_query = 'select sqlite_version();'
     cursor.execute(sql_version_query)
@@ -152,7 +58,7 @@ def check_sqllite_db_status():
     connection.close()
 
 def check_sqlite_logging():
-    conn = sqlite3.connect('cfb_cfbd.db')
+    conn = sqlite3.connect('databases/cfb_cfbd.db')
     # Check if the table exists
     cursor = conn.cursor()
     cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='blitzanalytics_log'")
@@ -187,7 +93,7 @@ def calculate_default_data_years():
     return default_years, default_current_year
 
 def check_existing_sqlite_data(default_years):
-    conn = sqlite3.connect('cfb_cfbd.db')
+    conn = sqlite3.connect('databases/cfb_cfbd.db')
     # Check if the table exists
     cursor = conn.cursor()
     cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='cfb_reporting_all_data'")
@@ -212,7 +118,7 @@ def check_existing_sqlite_data(default_years):
     conn.close()
 
 def sqlite_query_table(table_name):
-    conn = sqlite3.connect('cfb_cfbd.db')
+    conn = sqlite3.connect('databases/cfb_cfbd.db')
     #query = f"SELECT * FROM {table_name}"
     query = f"""
         SELECT *
@@ -227,7 +133,7 @@ def delete_all_tables():
     print("Warning, this will delete all the tables in the CFB Database.")
     selector_db_delete = input("Type y to Continue or type any other key to quit:")
     if selector_db_delete == 'y':
-        conn = sqlite3.connect('cfb_cfbd.db')
+        conn = sqlite3.connect('databases/cfb_cfbd.db')
         cursor = conn.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = cursor.fetchall()

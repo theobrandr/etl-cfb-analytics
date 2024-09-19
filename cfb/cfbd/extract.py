@@ -6,7 +6,7 @@ from datetime import datetime
 import dotenv
 import sqlite3
 import pandas as pd
-from playbook.pregame import timestamp
+from cfb.cfbd.pregame import timestamp
 
 #Load Enviroment Variables
 dotenv.load_dotenv()
@@ -43,7 +43,7 @@ def cfbd_api_request(cfbd_request_url):
     return response_json
 
 def remove_duplicate_data_with_team_year_week_sqlite(table_name):
-    conn = sqlite3.connect('cfb_cfbd.db')
+    conn = sqlite3.connect('databases/cfb_cfbd.db')
     cursor = conn.cursor()
     delete_query = f"""
     DELETE FROM {table_name}
@@ -58,7 +58,7 @@ def remove_duplicate_data_with_team_year_week_sqlite(table_name):
     conn.close()
 
 def remove_duplicate_data_with_team_year_statname_sqlite(table_name):
-    conn = sqlite3.connect('cfb_cfbd.db')
+    conn = sqlite3.connect('databases/cfb_cfbd.db')
     cursor = conn.cursor()
     delete_query = f"""
     DELETE FROM {table_name}
@@ -73,7 +73,7 @@ def remove_duplicate_data_with_team_year_statname_sqlite(table_name):
     conn.close()
 
 def remove_duplicate_data_with_team_and_year_sqlite(table_name):
-    conn = sqlite3.connect('cfb_cfbd.db')
+    conn = sqlite3.connect('databases/cfb_cfbd.db')
     cursor = conn.cursor()
     delete_query = f"""
     DELETE FROM {table_name}
@@ -88,7 +88,7 @@ def remove_duplicate_data_with_team_and_year_sqlite(table_name):
     conn.close()
 
 def remove_duplicate_data_with_id_sqlite(table_name):
-    conn = sqlite3.connect('cfb_cfbd.db')
+    conn = sqlite3.connect('databases/cfb_cfbd.db')
     cursor = conn.cursor()
     delete_query = f"""
     DELETE FROM {table_name}
@@ -103,7 +103,7 @@ def remove_duplicate_data_with_id_sqlite(table_name):
     conn.close()
 
 def remove_duplicate_data_with_gameid_sqlite(table_name):
-    conn = sqlite3.connect('cfb_cfbd.db')
+    conn = sqlite3.connect('databases/cfb_cfbd.db')
     cursor = conn.cursor()
     delete_query = f"""
     DELETE FROM {table_name}
@@ -118,7 +118,7 @@ def remove_duplicate_data_with_gameid_sqlite(table_name):
     conn.close()
 
 def remove_duplicate_data_timestamp_only_sqlite(table_name):
-    conn = sqlite3.connect('cfb_cfbd.db')
+    conn = sqlite3.connect('databases/cfb_cfbd.db')
     cursor = conn.cursor()
     delete_query = f"""
     DELETE FROM {table_name}
@@ -132,7 +132,7 @@ def remove_duplicate_data_timestamp_only_sqlite(table_name):
     conn.close()
 
 def insert_cfbd_to_sqlite(cfb_table_name,df_cfbd_data):
-    conn = sqlite3.connect('cfb_cfbd.db')
+    conn = sqlite3.connect('databases/cfb_cfbd.db')
     df_cfbd_data.to_sql(cfb_table_name, conn, if_exists='append', index=False)
     conn.close()
 

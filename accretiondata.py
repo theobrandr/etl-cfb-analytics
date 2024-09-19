@@ -1,7 +1,7 @@
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
-from playbook import load
+from cfb.cfbd import load
 import plotly.graph_objects as go
 import plotly.express as px
 import plotly.colors as pc

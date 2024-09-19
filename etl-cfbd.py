@@ -1,7 +1,6 @@
-from playbook import pregame
-from playbook import extract
-from playbook import transform
-from playbook import reporting
+from cfb.cfbd import pregame
+from cfb.cfbd import extract
+from cfb.cfbd import transform
 import argparse
 
 
@@ -88,7 +87,6 @@ if __name__ == '__main__':
     pregame.api_key_check()
     pregame.check_sqllite_db_status()
     default_years, default_report_year = pregame.calculate_default_data_years()
-    pregame.filepath_check(default_report_year)
     status_existing_data = pregame.check_existing_sqlite_data(default_years)
     extract_cfb_data(skip_extract, status_existing_data, default_years, default_report_year)
     transform_cfb_data_from_cfbd(skip_transform)
