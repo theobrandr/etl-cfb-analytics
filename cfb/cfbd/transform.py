@@ -477,7 +477,7 @@ def prep_data_for_reporting():
     df_base_season_games.sort_values(by=['team', 'season', 'sort_order', 'week'], ascending=[True, True, True, True], inplace=True)
     df_base_season_games.drop(columns='sort_order', inplace=True)
 
-    df_cfb_expand_matchup_sel_col = df_cfb_expand_matchup[['team', 'season', 'week', 'season_type',
+    df_cfb_expand_matchup_sel_col = df_cfb_expand_matchup[['team', 'season', 'week', 'season_type', 'start_date',
                                                            'Game Matchup', 'points', 'home_vs_away', 'id', 'box_score', 'win_loss' ]]
     df_cfb_team_info_sel_col = df_cfb_team_info[['team','abbreviation','conference','classification','color','alt_color']]
 
@@ -525,7 +525,7 @@ def prep_data_for_reporting():
     cfb_season_games_matchups = df_cfb_season_games_matchups
 
     # Insert the transformed data into the DB
-    insert_cfbd_to_sqlite('cfb_reporting_team_season_games_all_stats', cfb_team_season_games_all_stats)
+    insert_cfbd_to_sqlite('cfb_reporting_season_weeks_teams_all_stats', cfb_team_season_games_all_stats)
     insert_cfbd_to_sqlite('cfb_reporting_season_games_matchups', cfb_season_games_matchups)
 
     print('Transforming Summary Dataset')
@@ -603,4 +603,5 @@ def prep_data_for_reporting():
 
     # Insert the transformed data into the DB
     insert_cfbd_to_sqlite('cfb_reporting_season_summary', cfb_summary)
+
 
