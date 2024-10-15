@@ -19,8 +19,10 @@ Once the ETL is done running, run accretiondata.py and navigate to http://127.0.
 
 **Usage**
 <br>
-  blitanalytics.py
-
+  - etl-cfbd.py (Data ETL to pull in College Football Data and Transform it for Reporting)
+  - accretiondata.py (Dash App for Reporting)
+    
+<br>
 **Program Arguments***
 ### Command Line Arguments for Blitz Analytics
 <br>
@@ -51,7 +53,13 @@ Examples:
 **File Storage**
   In order to avoid re-pulling all previous years cfb data with every run of the script, a local sqlite database will be created in the directory the script is run from. 
 
-**College Football Matchup Report**
+**Accretion Data**
+<img width="1316" alt="image" src="https://github.com/user-attachments/assets/8615809a-1454-49ed-950d-446e915e82d9">
+
+**College Football Matchup Summary**
+<img width="1469" alt="image" src="https://github.com/user-attachments/assets/c9dd95fd-70f0-4ac5-b60e-84638eba9539">
+
+**College Football Matchup Detailed Analytics**
 <br>
 <img width="1422" alt="image" src="https://github.com/user-attachments/assets/8d4cae3b-d539-4632-bcf0-980183f5e0be">
 <br>
