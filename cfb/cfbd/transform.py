@@ -604,4 +604,9 @@ def prep_data_for_reporting():
     # Insert the transformed data into the DB
     insert_cfbd_to_sqlite('cfb_reporting_season_summary', cfb_summary)
 
+    # Insert Team Info Data into DB for reporting
+    insert_cfbd_to_sqlite('cfb_reporting_team_info', df_cfb_team_info)
+
+
+
 
