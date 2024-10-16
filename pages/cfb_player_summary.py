@@ -14,8 +14,9 @@ cfb_player_season_stats = load.sqlite_query_table('cfb_reporting_player_stats_by
 cfb_reporting_schedule = load.sqlite_query_table('cfb_reporting_schedule')
 cfb_team_info = load.sqlite_query_table('cfb_reporting_team_info')
 
-
 def hex_to_rgba(hex_color, alpha=0.4):
+    if hex_color.startswith('rgba'):
+        return hex_color  # Already rgba, return it
     rgb_color = pc.hex_to_rgb(hex_color)
     return f'rgba({rgb_color[0]}, {rgb_color[1]}, {rgb_color[2]}, {alpha})'
 
@@ -50,7 +51,7 @@ layout = html.Div([
             dcc.Dropdown(
                 id='team-dropdown',
                 options=team_options,
-                value=team_options[198]['value'],
+                value=None,
                 style={"width": "100%"}
             ),
 
@@ -68,18 +69,37 @@ layout = html.Div([
     Output('players-summary-table-wr', 'figure'),
     Output('players-summary-table-rb', 'figure'),
     Output('players-summary-table-te', 'figure'),
-
     [Input('season-dropdown', 'value'),
      Input('team-dropdown', 'value')]
-)
+    )
 def players_from_team_filter(season, team):
-    df_players_season_team = cfb_player_season_stats.loc[
-        (cfb_player_season_stats['season_roster'].astype(str) == str(season)) &
-        (cfb_player_season_stats['team_roster'].astype(str) == str(team))
-    ]
-    team_colors = cfb_team_info.loc[cfb_team_info['team'] == team, 'color']
+    # Check if a specific team is selected
+    if team:
+        df_players_season_team = cfb_player_season_stats.loc[
+            (cfb_player_season_stats['season_roster'].astype(str) == str(season)) &
+            (cfb_player_season_stats['team_roster'].astype(str) == str(team))
+            ]
+
+        # Set color for selected team
+        team_colors = {team: cfb_team_info.loc[cfb_team_info['team'] == team, 'color'].values[0]
+        if not cfb_team_info.loc[cfb_team_info['team'] == team].empty
+        else '#FFFFFF'}
+    else:
+        # If no team is selected, select data for all teams
+        df_players_season_team = cfb_player_season_stats.loc[
+            (cfb_player_season_stats['season_roster'].astype(str) == str(season))
+        ]
+
+        # Assign colors to all teams in the dataset
+        team_colors = {
+            team: cfb_team_info.loc[cfb_team_info['team'] == team, 'color'].values[0]
+            if not cfb_team_info.loc[cfb_team_info['team'] == team].empty
+            else '#FFFFFF'
+            for team in df_players_season_team['team_roster'].unique()
+        }
 
     figures = []
+
     player_stats_table_qb = vis_matchup_player_stats_table(
         df_players_season_team,'qb', season, team_colors, "QB Stats")
     figures.append(player_stats_table_qb)
