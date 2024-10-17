@@ -84,12 +84,32 @@ def players_from_team_filter(season, team):
         team_colors = {team: cfb_team_info.loc[cfb_team_info['team'] == team, 'color'].values[0]
         if not cfb_team_info.loc[cfb_team_info['team'] == team].empty
         else '#FFFFFF'}
+
+        figures = []
+
+        player_stats_table_qb = vis_matchup_player_stats_table(
+            df_players_season_team, 'qb', season, team_colors, "QB Stats")
+        figures.append(player_stats_table_qb)
+
+        player_stats_table_wr = vis_matchup_player_stats_table(
+            df_players_season_team, 'wr', season, team_colors, "WR Stats")
+        figures.append(player_stats_table_wr)
+
+        player_stats_table_rb = vis_matchup_player_stats_table(
+            df_players_season_team, 'rb', season, team_colors, "RB Stats")
+        figures.append(player_stats_table_rb)
+
+        player_stats_table_te = vis_matchup_player_stats_table(
+            df_players_season_team, 'te', season, team_colors, "TE Stats")
+        figures.append(player_stats_table_te)
+        return figures
+
     else:
         # If no team is selected, select data for all teams
         df_players_season_team = cfb_player_season_stats.loc[
             (cfb_player_season_stats['season_roster'].astype(str) == str(season))
         ]
-
+        '''
         # Assign colors to all teams in the dataset
         team_colors = {
             team: cfb_team_info.loc[cfb_team_info['team'] == team, 'color'].values[0]
@@ -97,25 +117,26 @@ def players_from_team_filter(season, team):
             else '#FFFFFF'
             for team in df_players_season_team['team_roster'].unique()
         }
+        '''
+        figures = []
 
-    figures = []
+        player_stats_table_qb = vis_matchup_player_stats_no_color_table(
+            df_players_season_team, 'qb', season, "QB Stats")
+        figures.append(player_stats_table_qb)
 
-    player_stats_table_qb = vis_matchup_player_stats_table(
-        df_players_season_team,'qb', season, team_colors, "QB Stats")
-    figures.append(player_stats_table_qb)
+        player_stats_table_wr = vis_matchup_player_stats_no_color_table(
+            df_players_season_team, 'wr', season, "WR Stats")
+        figures.append(player_stats_table_wr)
 
-    player_stats_table_wr = vis_matchup_player_stats_table(
-        df_players_season_team, 'wr', season, team_colors, "WR Stats")
-    figures.append(player_stats_table_wr)
+        player_stats_table_rb = vis_matchup_player_stats_no_color_table(
+            df_players_season_team, 'rb', season, "RB Stats")
+        figures.append(player_stats_table_rb)
 
-    player_stats_table_rb = vis_matchup_player_stats_table(
-        df_players_season_team, 'rb', season, team_colors, "RB Stats")
-    figures.append(player_stats_table_rb)
+        player_stats_table_te = vis_matchup_player_stats_no_color_table(
+            df_players_season_team, 'te', season, "TE Stats")
+        figures.append(player_stats_table_te)
+        return figures
 
-    player_stats_table_te = vis_matchup_player_stats_table(
-        df_players_season_team, 'te', season, team_colors, "TE Stats")
-    figures.append(player_stats_table_te)
-    return figures
 
 def vis_matchup_player_stats_table(df, stat_type, season_stat, team_colors, player_stat_title):
     player_data = df.loc[(df['season_stat'].astype(str) == str(season_stat))]
@@ -173,6 +194,62 @@ def vis_matchup_player_stats_table(df, stat_type, season_stat, team_colors, play
                           cell_colors + ['rgba(255, 255, 255, 0.4)'] * (len(wrapped_pos_headers) - 1)
                       ] * len(player_data_pos_stat),
             )
+        )
+    ))
+    fig.update_layout(
+        height=800,
+        title_text=player_stat_title
+    )
+    return fig
+
+def vis_matchup_player_stats_no_color_table(df, stat_type, season_stat, player_stat_title):
+    player_data = df.loc[(df['season_stat'].astype(str) == str(season_stat))]
+    player_data.sort_values(by=['team_roster', 'season_roster', 'position', 'year'],
+                            ascending=[True, True, True, False], inplace=True)
+    player_data_col = ['team_roster', 'season_roster', 'playerId', 'player', 'position', 'year', 'team_stat',
+                       'season_stat']
+
+    if stat_type == 'qb':
+        player_data_pos = player_data.loc[(player_data['position'] == "QB")]
+        player_data_pos_stat_col = player_data.filter(regex='passing|rushing|fumbles').columns.tolist()
+        player_data_pos_report_col = player_data_col + player_data_pos_stat_col
+        player_data_pos_stat = player_data_pos[player_data_pos_report_col]
+        player_data_pos_stat.sort_values(by=['passing_YDS', 'passing_PCT', 'passing_TD', 'rushing_TD', 'rushing_YDS'],
+                                ascending=[False, False, False, False, False], inplace=True)
+
+    elif stat_type == 'wr':
+        player_data_pos = player_data.loc[(player_data['position'] == "WR")]
+        player_data_pos_stat_col = player_data.filter(regex='recieving|rushing|fumbles').columns.tolist()
+        player_data_pos_report_col = player_data_col + player_data_pos_stat_col
+        player_data_pos_stat = player_data_pos[player_data_pos_report_col]
+
+    elif stat_type == 'rb':
+        player_data_pos = player_data.loc[(player_data['position'] == "RB")]
+        player_data_pos_stat_col = player_data.filter(regex='rushing|fumbles').columns.tolist()
+        player_data_pos_report_col = player_data_col + player_data_pos_stat_col
+        player_data_pos_stat = player_data_pos[player_data_pos_report_col]
+
+    elif stat_type == 'te':
+        player_data_pos = player_data.loc[(player_data['position'] == "TE")]
+        player_data_pos_stat_col = player_data.filter(regex='recieving|rushing|fumbles').columns.tolist()
+        player_data_pos_report_col = player_data_col + player_data_pos_stat_col
+        player_data_pos_stat = player_data_pos[player_data_pos_report_col]
+
+    def wrap_text_on_hyphen(text):
+        return '<br>'.join(text.split('_'))
+
+    wrapped_pos_headers = [wrap_text_on_hyphen(col) for col in player_data_pos_report_col]
+
+
+    fig = go.Figure(go.Table(
+        header=dict(
+            values=wrapped_pos_headers,
+            font=dict(size=10),
+            align="left"
+        ),
+        cells=dict(
+            values=[player_data_pos_stat[col].tolist() for col in player_data_pos_stat.columns],
+            align="left",
         )
     ))
     fig.update_layout(
