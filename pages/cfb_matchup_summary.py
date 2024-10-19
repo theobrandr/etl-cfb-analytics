@@ -83,7 +83,7 @@ def matchups_from_filter(season, season_type, week):
                                                left_on=['team', 'season'],
                                                right_on=['team', 'season'],
                                                how='left')
-    print()
+
     return vis_matchup_summary_table(df_matchups_with_season_summary)
 
 
@@ -96,7 +96,7 @@ def vis_matchup_summary_table(df_matchups_with_season_summary):
          'offense_netPassingYards', 'offense_passCompletion_Conversions_percent',
          'offense_passesIntercepted', 'offense_fumblesLost',
          'defense_sacks', 'defense_tacklesForLoss', 'defense_interceptions']]
-    df_sel_col.sort_values(by=['start_date', 'team'], ascending=[True, True], inplace=True)
+    df_sel_col.sort_values(by=['start_date', 'Game Matchup'], ascending=[True, True], inplace=True)
     df = df_sel_col[df_sel_col['Game Matchup'].astype(str) != '0']
 
     num_rows = len(df)
@@ -125,18 +125,3 @@ def vis_matchup_summary_table(df_matchups_with_season_summary):
 
     return fig
 
-'''
-def matchup_report():
-    print("Starting Matchup Report")
-    # These are the default dash host and ports
-    host = '127.0.0.1'
-    port = 8050
-    # Start the Dash server
-    print(f"Dash app is running on http://{host}:{port}/")
-    app.run_server(host=host, port=port, debug=True)
-
-
-# Run the Dash app
-if __name__ == '__main__':
-    matchup_report()
-'''
