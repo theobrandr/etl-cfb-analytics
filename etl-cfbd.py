@@ -4,7 +4,7 @@ from cfb.cfbd import transform
 import argparse
 
 
-parser = argparse.ArgumentParser(description='blitzanalytics Arguments')
+parser = argparse.ArgumentParser(description='Accretion Data CFBD ETL Arguments')
 parser.add_argument("-d", "--delete_all_tables", action='store_true',
                     help="Delete all DB tables if the DB is taking up too much space. Run the program with -p after to re-populate the DB.")
 parser.add_argument("-s", "--skip_extract", action='store_true',

@@ -369,9 +369,16 @@ def vis_matchup_summary_table(df, matchup, season, team_colors):
 
 
 def vis_matchup_all_seasons_summary_table(df, team_colors):
-    season_summary_columns = ['season', 'team', 'total.wins', 'total.losses', 'home_points_season_mean',
+    season_summary_columns_pre = ['season', 'team', 'total.wins', 'total.losses', 'home_points_season_mean',
                               'away_points_season_mean', 'epa_per_game_offense_overall_avg_per_season',
-                              'epa_per_game_offense_overall_avg_per_season']
+                              'epa_per_game_offense_overall_avg_per_season',
+                              'offense_totalYards', 'offense_netPassingYards', 'offense_rushingYards', 'offense_turnovers',
+                              'defense_sacks', 'defense_tacklesForLoss', 'defense_interceptions', 'penalties',
+                              'specialteams_puntReturnTDs', 'specialteams_puntReturnYards' ]
+
+    season_summary_columns = [col.replace('_', '<br>').replace('.', '<br>') for col in season_summary_columns_pre]
+
+    df.sort_values(by=['season', 'team'], ascending=[False, True], inplace=True)
 
     team_colors_rgba = {team: hex_to_rgba(color) for team, color in team_colors.items()}
     cell_colors = [team_colors_rgba.get(team, 'rgba(255, 255, 255, 0.4)') for team in df['team']]
@@ -383,13 +390,16 @@ def vis_matchup_all_seasons_summary_table(df, team_colors):
             align="left"
         ),
         cells=dict(
-            values=[df[col].tolist() for col in season_summary_columns],
+            values=[df[col].tolist() for col in season_summary_columns_pre],
             align="left",
             fill=dict(
-                color=[cell_colors + ['rgba(255, 255, 255, 0.4)'] * (len(season_summary_columns) - 1)
+                color=[cell_colors + ['rgba(255, 255, 255, 0.4)'] * (len(season_summary_columns_pre) - 1)
                        ] * len(df)
             )
         ))]
+    )
+    fig.update_layout(
+        height=600
     )
     return fig
 
@@ -445,8 +455,10 @@ def vis_points_by_season(df, team_colors):
 
 def vis_spread_by_season(df, team_colors):
     df['spread_counts'] = 1
+    df_spread = df.loc[df['result_of_the_spread'].astype(str) != str(0)]
+
     fig = px.histogram(
-        df,
+        df_spread,
         x="result_of_the_spread",
         y="spread_counts",
         barmode="group",

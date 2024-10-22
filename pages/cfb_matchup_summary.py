@@ -20,7 +20,7 @@ def hex_to_rgba(hex_color, alpha=0.4):
 # Initialize Dash app
 dash.register_page(
     __name__,
-    title='CFB Matchup Summary  Analytics',
+    title='CFB Matchup Summary Analytics',
     name='CFB Matchup Summary Analytics'
 )
 
@@ -91,11 +91,13 @@ def vis_matchup_summary_table(df_matchups_with_season_summary):
     df_sel_col = df_matchups_with_season_summary[
         ['Game Matchup', 'start_date', 'team', 'total.wins', 'total.losses', 'home_points_season_mean', 'away_points_season_mean',
          'epa_per_game_offense_overall_avg_per_season', 'epa_per_game_defense_overall_avg_per_season',
+         'offense.totalPPA', 'offense.successRate', 'offense.explosiveness',
          'offense_firstDowns', 'offense_thirdDownConversions', 'offense_totalYards',
          'offense_rushingYards', 'offense_rushingYards_average',
          'offense_netPassingYards', 'offense_passCompletion_Conversions_percent',
          'offense_passesIntercepted', 'offense_fumblesLost',
-         'defense_sacks', 'defense_tacklesForLoss', 'defense_interceptions']]
+         'defense_sacks', 'defense_tacklesForLoss', 'defense_interceptions',
+         'defense.totalPPA','defense.successRate','defense.explosiveness']]
     df_sel_col.sort_values(by=['start_date', 'Game Matchup'], ascending=[True, True], inplace=True)
     df = df_sel_col[df_sel_col['Game Matchup'].astype(str) != '0']
 
@@ -107,7 +109,7 @@ def vis_matchup_summary_table(df_matchups_with_season_summary):
     # Create the table figure
     fig = go.Figure(data=[go.Table(
         header=dict(
-            values=[col.replace('_', '<br>') for col in df.columns],  # Replaces '_' with line breaks
+            values = [col.replace('_', '<br>').replace('.', '<br>') for col in df.columns],
             font=dict(size=10),
             align="left"
         ),

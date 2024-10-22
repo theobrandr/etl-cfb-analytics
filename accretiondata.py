@@ -8,7 +8,7 @@ app.layout = html.Div([
     html.H1('Accretion Data', style={'color': 'white'}),
     html.Div([
         html.Div(
-            dcc.Link(f"{page['title']} - {page['path']}", href=page["relative_path"], className='nav-link-style')
+            dcc.Link(f"{page['title']}", href=page["relative_path"], className='nav-link-style')
         ) for page in dash.page_registry.values()
     ]),
     dash.page_container

@@ -23,8 +23,8 @@ def hex_to_rgba(hex_color, alpha=0.4):
 # Initialize Dash app
 dash.register_page(
     __name__,
-    title='CFB Player Summary',
-    name='CFB Player Summary'
+    title='CFB Player Position Summary',
+    name='CFB Player Position Summary'
 )
 
 # Define dropdown options from your DataFrame
