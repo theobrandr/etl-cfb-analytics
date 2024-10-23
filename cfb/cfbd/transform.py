@@ -524,10 +524,6 @@ def prep_data_for_reporting():
     cfb_team_season_games_all_stats = df_base_team_season_games_matchup_ranking_epa_odds_stats.fillna(0)
     cfb_season_games_matchups = df_cfb_season_games_matchups
 
-    # Insert the transformed data into the DB
-    insert_cfbd_to_sqlite('cfb_reporting_season_weeks_teams_all_stats', cfb_team_season_games_all_stats)
-    insert_cfbd_to_sqlite('cfb_reporting_season_games_matchups', cfb_season_games_matchups)
-
     print('Transforming Summary Dataset')
     #CFB Seasons Stats zscores for summary
     df_cfb_season_games_agg_scores = remove_df_timestamp(sqlite_query_table('cfb_transform_season_games_agg_scores'))
@@ -602,9 +598,9 @@ def prep_data_for_reporting():
     cfb_summary[cfb_summary.select_dtypes(include=['number']).columns] = cfb_summary.select_dtypes(include=['number']).astype('float32')
 
     # Insert the transformed data into the DB
+    insert_cfbd_to_sqlite('cfb_reporting_season_weeks_teams_all_stats', cfb_team_season_games_all_stats)
+    insert_cfbd_to_sqlite('cfb_reporting_season_games_matchups', cfb_season_games_matchups)
     insert_cfbd_to_sqlite('cfb_reporting_season_summary', cfb_summary)
-
-    # Insert Team Info Data into DB for reporting
     insert_cfbd_to_sqlite('cfb_reporting_team_info', df_cfb_team_info)
 
 

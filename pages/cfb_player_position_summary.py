@@ -7,11 +7,7 @@ import plotly.express as px
 import plotly.colors as pc
 import pandas as pd
 
-cfb_team_season_games_all_stats = load.sqlite_query_table('cfb_reporting_season_weeks_teams_all_stats')
-cfb_season_games_matchups = load.sqlite_query_table('cfb_reporting_season_games_matchups')
-cfb_season_summary = load.sqlite_query_table('cfb_reporting_season_summary')
 cfb_player_season_stats = load.sqlite_query_table('cfb_reporting_player_stats_by_season')
-cfb_reporting_schedule = load.sqlite_query_table('cfb_reporting_schedule')
 cfb_team_info = load.sqlite_query_table('cfb_reporting_team_info')
 
 def hex_to_rgba(hex_color, alpha=0.4):
@@ -27,7 +23,8 @@ dash.register_page(
     name='CFB Player Position Summary'
 )
 
-# Define dropdown options from your DataFrame
+# Define dropdown options
+cfb_reporting_schedule = load.sqlite_query_table('cfb_reporting_schedule')
 season_options = [{'label': str(s), 'value': str(s)} for s in
                   sorted(cfb_reporting_schedule['season'].unique(), reverse=True)]
 seasonType_options = [{'label': st, 'value': st} for st in cfb_reporting_schedule['seasonType'].unique()]
@@ -109,15 +106,7 @@ def players_from_team_filter(season, team):
         df_players_season_team = cfb_player_season_stats.loc[
             (cfb_player_season_stats['season_roster'].astype(str) == str(season))
         ]
-        '''
-        # Assign colors to all teams in the dataset
-        team_colors = {
-            team: cfb_team_info.loc[cfb_team_info['team'] == team, 'color'].values[0]
-            if not cfb_team_info.loc[cfb_team_info['team'] == team].empty
-            else '#FFFFFF'
-            for team in df_players_season_team['team_roster'].unique()
-        }
-        '''
+
         figures = []
 
         player_stats_table_qb = vis_matchup_player_stats_no_color_table(
@@ -136,7 +125,6 @@ def players_from_team_filter(season, team):
             df_players_season_team, 'te', season, "TE Stats")
         figures.append(player_stats_table_te)
         return figures
-
 
 def vis_matchup_player_stats_table(df, stat_type, season_stat, team_colors, player_stat_title):
     player_data = df.loc[(df['season_stat'].astype(str) == str(season_stat))]

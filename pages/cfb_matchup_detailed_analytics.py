@@ -138,7 +138,6 @@ def update_matchup_dropdown(season, seasonType, week):
     matchups = matchup_from_filter(season, seasonType, week, cfb_season_games_matchups)
     return [{'label': m, 'value': m} for m in matchups]
 
-
 def matchup_from_filter(season, season_type, week, cfb_season_games_matchups):
     df = cfb_season_games_matchups.loc[
         (cfb_season_games_matchups['season'].astype(str).str.contains(str(season), na=False)) &
@@ -147,7 +146,6 @@ def matchup_from_filter(season, season_type, week, cfb_season_games_matchups):
         ]
     matchup = df['Game Matchup'].unique()
     return matchup
-
 
 # Callback to update the graph based on selected matchup
 @callback(

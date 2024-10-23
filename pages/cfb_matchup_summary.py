@@ -7,12 +7,6 @@ import plotly.express as px
 import plotly.colors as pc
 import pandas as pd
 
-cfb_team_season_games_all_stats = load.sqlite_query_table('cfb_reporting_season_weeks_teams_all_stats')
-cfb_season_games_matchups = load.sqlite_query_table('cfb_reporting_season_games_matchups')
-cfb_season_summary = load.sqlite_query_table('cfb_reporting_season_summary')
-cfb_player_season_stats = load.sqlite_query_table('cfb_reporting_player_stats_by_season')
-cfb_reporting_schedule = load.sqlite_query_table('cfb_reporting_schedule')
-
 def hex_to_rgba(hex_color, alpha=0.4):
     rgb_color = pc.hex_to_rgb(hex_color)
     return f'rgba({rgb_color[0]}, {rgb_color[1]}, {rgb_color[2]}, {alpha})'
@@ -24,7 +18,8 @@ dash.register_page(
     name='CFB Matchup Summary Analytics'
 )
 
-# Define dropdown options from your DataFrame
+# Define dropdown options
+cfb_reporting_schedule = load.sqlite_query_table('cfb_reporting_schedule')
 season_options = [{'label': str(s), 'value': str(s)} for s in
                   sorted(cfb_reporting_schedule['season'].unique(), reverse=True)]
 seasonType_options = [{'label': st, 'value': st} for st in cfb_reporting_schedule['seasonType'].unique()]
@@ -69,26 +64,30 @@ layout = html.Div([
      Input('week-dropdown', 'value')]
 )
 def matchups_from_filter(season, season_type, week):
-    df_matchups = cfb_team_season_games_all_stats.loc[
+    cfb_team_season_games_all_stats = load.sqlite_query_table('cfb_reporting_season_weeks_teams_all_stats')
+    cfb_season_summary = load.sqlite_query_table('cfb_reporting_season_summary')
+
+    cfb_team_season_games_all_stats = cfb_team_season_games_all_stats.loc[
         (cfb_team_season_games_all_stats['season'].astype(str) == str(season)) &
         (cfb_team_season_games_all_stats['week'].astype(str) == str(week)) &
         (cfb_team_season_games_all_stats['season_type'].astype(str) == str(season_type))
     ]
 
-    df_season_summary = cfb_season_summary.loc[
+    cfb_season_summary = cfb_season_summary.loc[
         (cfb_season_summary['season'].astype(str) == str(season))
     ]
 
-    df_matchups_with_season_summary = pd.merge(df_matchups, df_season_summary,
+    df_matchups_with_season_summary = pd.merge(cfb_team_season_games_all_stats, cfb_season_summary,
                                                left_on=['team', 'season'],
                                                right_on=['team', 'season'],
                                                how='left')
+    del cfb_team_season_games_all_stats
+    del cfb_season_summary
 
     return vis_matchup_summary_table(df_matchups_with_season_summary)
 
-
-def vis_matchup_summary_table(df_matchups_with_season_summary):
-    df_sel_col = df_matchups_with_season_summary[
+def vis_matchup_summary_table(df):
+    df = df[
         ['Game Matchup', 'start_date', 'team', 'total.wins', 'total.losses', 'home_points_season_mean', 'away_points_season_mean',
          'epa_per_game_offense_overall_avg_per_season', 'epa_per_game_defense_overall_avg_per_season',
          'offense.totalPPA', 'offense.successRate', 'offense.explosiveness',
@@ -98,8 +97,8 @@ def vis_matchup_summary_table(df_matchups_with_season_summary):
          'offense_passesIntercepted', 'offense_fumblesLost',
          'defense_sacks', 'defense_tacklesForLoss', 'defense_interceptions',
          'defense.totalPPA','defense.successRate','defense.explosiveness']]
-    df_sel_col.sort_values(by=['start_date', 'Game Matchup'], ascending=[True, True], inplace=True)
-    df = df_sel_col[df_sel_col['Game Matchup'].astype(str) != '0']
+    df.sort_values(by=['start_date', 'Game Matchup'], ascending=[True, True], inplace=True)
+    df = df[df['Game Matchup'].astype(str) != '0']
 
     num_rows = len(df)
     row_height = 30  # Adjust row height if needed
